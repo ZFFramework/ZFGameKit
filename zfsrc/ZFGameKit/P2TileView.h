@@ -6,7 +6,7 @@
 #ifndef _ZFI_P2TileView_h_
 #define _ZFI_P2TileView_h_
 
-#include "Phyx2D.h"
+#include "P2World.h"
 ZF_NAMESPACE_GLOBAL_BEGIN
 
 zfclassFwd _ZFP_P2TileViewPrivate;

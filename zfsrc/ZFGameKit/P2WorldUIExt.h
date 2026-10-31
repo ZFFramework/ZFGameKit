@@ -1,12 +1,12 @@
 /**
- * @file Phyx2DUIExt.h
+ * @file P2WorldUIExt.h
  * @brief 2d physics as #ZFUIView
  */
 
-#ifndef _ZFI_Phyx2DUIExt_h_
-#define _ZFI_Phyx2DUIExt_h_
+#ifndef _ZFI_P2WorldUIExt_h_
+#define _ZFI_P2WorldUIExt_h_
 
-#include "Phyx2D.h"
+#include "P2World.h"
 #include "P2ScreenTileView.h"
 ZF_NAMESPACE_GLOBAL_BEGIN
 
@@ -279,5 +279,5 @@ ZFMETHOD_FUNC_DECLARE_4(ZFLIB_ZFGameKit, ZFUIRect, P2UIRectToAABB
         )
 
 ZF_NAMESPACE_GLOBAL_END
-#endif // #ifndef _ZFI_Phyx2DUIExt_h_
+#endif // #ifndef _ZFI_P2WorldUIExt_h_
 

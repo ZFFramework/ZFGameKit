@@ -1,10 +1,10 @@
 /**
- * @file Phyx2D.h
+ * @file P2World.h
  * @brief 2d physics
  */
 
-#ifndef _ZFI_Phyx2D_h_
-#define _ZFI_Phyx2D_h_
+#ifndef _ZFI_P2World_h_
+#define _ZFI_P2World_h_
 
 #include "ZFGameKitDef.h"
 ZF_NAMESPACE_GLOBAL_BEGIN
@@ -1370,5 +1370,5 @@ ZFMETHOD_FUNC_DECLARE_3(ZFLIB_ZFGameKit, ZFUIPoint, P2LocalToWorld
         )
 
 ZF_NAMESPACE_GLOBAL_END
-#endif // #ifndef _ZFI_Phyx2D_h_
+#endif // #ifndef _ZFI_P2World_h_
 
