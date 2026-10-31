@@ -1,4 +1,5 @@
 #include "P2GamePad.h"
+#include "protocol/ZFProtocolP2GamePad.h"
 
 ZF_NAMESPACE_GLOBAL_BEGIN
 

@@ -7,16 +7,16 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		65D5100497E6327AEA37F78E816A59C5 /* ZFGameKit_zfprojConfig.xcodeproj/dummy.mm in Sources */ = {isa = PBXBuildFile; fileRef = FC275AC2C24595B5ED944FAB25ABCCD8 /* ZFGameKit_zfprojConfig.xcodeproj/dummy.mm */; };
+		C8900DE3E80D35421D384250A851B409 /* ZFGameKit_zfprojConfig.xcodeproj/dummy.mm in Sources */ = {isa = PBXBuildFile; fileRef = FB93E293793CDDF7276CEA9E41803097 /* ZFGameKit_zfprojConfig.xcodeproj/dummy.mm */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		0C557480A5F035786F9E5FFF80D75FD9 /* ZFGameKit_zfprojConfig.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = ZFGameKit_zfprojConfig.framework; sourceTree = BUILT_PRODUCTS_DIR; };
-		FC275AC2C24595B5ED944FAB25ABCCD8 /* ZFGameKit_zfprojConfig.xcodeproj/dummy.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = ZFGameKit_zfprojConfig.xcodeproj/dummy.mm; sourceTree = "<group>"; };
+		83BDC5918C0492FD39A741A9D9309D18 /* ZFGameKit_zfprojConfig.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = ZFGameKit_zfprojConfig.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		FB93E293793CDDF7276CEA9E41803097 /* ZFGameKit_zfprojConfig.xcodeproj/dummy.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = ZFGameKit_zfprojConfig.xcodeproj/dummy.mm; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
-		C0F651B3A52D9C1A506F96A45DADE1FE /* Frameworks */ = {
+		705249D537CA6AE006C30E618415A74F /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -26,40 +26,40 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		4D6E6504EE806BD6CDF5344104A07AA5 /* Products */ = {
+		969CF9BE8C51DFABA4A8E3FC52FC4DB1 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				0C557480A5F035786F9E5FFF80D75FD9 /* ZFGameKit_zfprojConfig.framework */,
+				83BDC5918C0492FD39A741A9D9309D18 /* ZFGameKit_zfprojConfig.framework */,
 			);
 			name = Products;
 			sourceTree = "<group>";
 		};
-		4111D5753F2F2C3446AEFDF6D831ACC7 /* Frameworks */ = {
+		9886526D1B14C7B9DAF84B1A0C7B5F0B /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
 		};
-		D006CAA49E8C3B44D9AE3A7E0CA3A181 = {
+		AB70ED51B4E50FDD964E37B6827159A6 = {
 			isa = PBXGroup;
 			children = (
-				4111D5753F2F2C3446AEFDF6D831ACC7 /* Frameworks */,
-				4D6E6504EE806BD6CDF5344104A07AA5 /* Products */,
-				FC275AC2C24595B5ED944FAB25ABCCD8 /* ZFGameKit_zfprojConfig.xcodeproj/dummy.mm */,
+				9886526D1B14C7B9DAF84B1A0C7B5F0B /* Frameworks */,
+				969CF9BE8C51DFABA4A8E3FC52FC4DB1 /* Products */,
+				FB93E293793CDDF7276CEA9E41803097 /* ZFGameKit_zfprojConfig.xcodeproj/dummy.mm */,
 			);
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		A98409E9A39190919C8D8FFCDDC0FF15 /* ZFGameKit_zfprojConfig */ = {
+		CBDC576EE518F37BD1479478FB6264E9 /* ZFGameKit_zfprojConfig */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 2A6AE410F836CC8BF1495AC0B70C6CEF /* Build configuration list for PBXNativeTarget "ZFGameKit_zfprojConfig" */;
+			buildConfigurationList = 38DDAC901299B74FA965762C54941069 /* Build configuration list for PBXNativeTarget "ZFGameKit_zfprojConfig" */;
 			buildPhases = (
-				D3DB9B274F13E55BBA5F7C5A80AF9CCB /* Sources */,
-				C0F651B3A52D9C1A506F96A45DADE1FE /* Frameworks */,
-				624C7272BC53FB23653E3E2ACF6CBA5D /* Resources */,
+				A82361011109D43EFD47E543B754820F /* Sources */,
+				705249D537CA6AE006C30E618415A74F /* Frameworks */,
+				F31E38863C6D78098768D4FE0BDF526D /* Resources */,
 			);
 			buildRules = (
 			);
@@ -69,24 +69,24 @@
 			packageProductDependencies = (
 			);
 			productName = ZFGameKit_zfprojConfig;
-			productReference = 0C557480A5F035786F9E5FFF80D75FD9 /* ZFGameKit_zfprojConfig.framework */;
+			productReference = 83BDC5918C0492FD39A741A9D9309D18 /* ZFGameKit_zfprojConfig.framework */;
 			productType = "com.apple.product-type.framework";
 		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
-		1619C0875687BD942A27A9D68627FD55 /* Project object */ = {
+		016DE5D71DCB5CC026139A2163D85618 /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = YES;
 				LastUpgradeCheck = 2620;
 				TargetAttributes = {
-					A98409E9A39190919C8D8FFCDDC0FF15 = {
+					CBDC576EE518F37BD1479478FB6264E9 = {
 						CreatedOnToolsVersion = 9.2;
 					};
 				};
 			};
-			buildConfigurationList = 3E041539C7093727F2DA359251FEBFE4 /* Build configuration list for PBXProject "ZFGameKit_zfprojConfig" */;
+			buildConfigurationList = C13D9D88A0B54E8E1B5E8873E4DE00F9 /* Build configuration list for PBXProject "ZFGameKit_zfprojConfig" */;
 			compatibilityVersion = "Xcode 8.0";
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
@@ -94,20 +94,20 @@
 				en,
 				Base,
 			);
-			mainGroup = D006CAA49E8C3B44D9AE3A7E0CA3A181;
+			mainGroup = AB70ED51B4E50FDD964E37B6827159A6;
 			packageReferences = (
 			);
-			productRefGroup = 4D6E6504EE806BD6CDF5344104A07AA5 /* Products */;
+			productRefGroup = 969CF9BE8C51DFABA4A8E3FC52FC4DB1 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				A98409E9A39190919C8D8FFCDDC0FF15 /* ZFGameKit_zfprojConfig */,
+				CBDC576EE518F37BD1479478FB6264E9 /* ZFGameKit_zfprojConfig */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
-		624C7272BC53FB23653E3E2ACF6CBA5D /* Resources */ = {
+		F31E38863C6D78098768D4FE0BDF526D /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -117,18 +117,18 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
-		D3DB9B274F13E55BBA5F7C5A80AF9CCB /* Sources */ = {
+		A82361011109D43EFD47E543B754820F /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				65D5100497E6327AEA37F78E816A59C5 /* ZFGameKit_zfprojConfig.xcodeproj/dummy.mm in Sources */,
+				C8900DE3E80D35421D384250A851B409 /* ZFGameKit_zfprojConfig.xcodeproj/dummy.mm in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin XCBuildConfiguration section */
-		C74E963B365DF2252441778A1C2727E2 /* Debug */ = {
+		D4E919FDC6F16BDD206808DF2F25B9BF /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
@@ -157,7 +157,7 @@
 			};
 			name = Debug;
 		};
-		7C45645BC8AA0BC75B5C76946CC50217 /* Release */ = {
+		A4C5714B675BAE2B56F0830D6918C1BE /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
@@ -186,7 +186,7 @@
 			};
 			name = Release;
 		};
-		5E46575B15CFD5AAE0B57F1C0F33DA6A /* Debug */ = {
+		8CB678C8319EDE86BB04C7A32001FFCB /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
@@ -241,7 +241,7 @@
 			};
 			name = Debug;
 		};
-		B8255D0CB927FBFF7863009808CFDDF3 /* Release */ = {
+		D9A57B4B04919A2BBD678A3F4F0C848A /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
@@ -293,25 +293,25 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		2A6AE410F836CC8BF1495AC0B70C6CEF /* Build configuration list for PBXNativeTarget "ZFGameKit_zfprojConfig" */ = {
+		38DDAC901299B74FA965762C54941069 /* Build configuration list for PBXNativeTarget "ZFGameKit_zfprojConfig" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				C74E963B365DF2252441778A1C2727E2 /* Debug */,
-				7C45645BC8AA0BC75B5C76946CC50217 /* Release */,
+				D4E919FDC6F16BDD206808DF2F25B9BF /* Debug */,
+				A4C5714B675BAE2B56F0830D6918C1BE /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		3E041539C7093727F2DA359251FEBFE4 /* Build configuration list for PBXProject "ZFGameKit_zfprojConfig" */ = {
+		C13D9D88A0B54E8E1B5E8873E4DE00F9 /* Build configuration list for PBXProject "ZFGameKit_zfprojConfig" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				5E46575B15CFD5AAE0B57F1C0F33DA6A /* Debug */,
-				B8255D0CB927FBFF7863009808CFDDF3 /* Release */,
+				8CB678C8319EDE86BB04C7A32001FFCB /* Debug */,
+				D9A57B4B04919A2BBD678A3F4F0C848A /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 	};
-	rootObject = 1619C0875687BD942A27A9D68627FD55 /* Project object */;
+	rootObject = 016DE5D71DCB5CC026139A2163D85618 /* Project object */;
 }

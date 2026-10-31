@@ -7,13 +7,13 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		053692DDAE39E8EF679FD77E7752D171 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 90135995939004FBCBD435ACC2CFDFD4 /* Foundation.framework */; };
-		0F3707FBFD241EE2981208C92071E357 /* ZFGameKit_zfprojConfig.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E06AE40EF734153C349D3E6F10BBA2A7 /* ZFGameKit_zfprojConfig.framework */; settings = {ATTRIBUTES = (Weak, ); }; };
-		84D254C9C78ACA05877627A2BBFC9C52 /* zfgensrc_ZFGameKit.mm in Sources */ = {isa = PBXBuildFile; fileRef = 6BE6648F83B575ECC2F1FF22A2122010 /* zfgensrc_ZFGameKit.mm */; };
+		0F8B919A5EA18694F792DD6CC0D4671E /* ZFGameKit_zfprojConfig.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 242C224E6A6DF9AC3E01C120B5E97735 /* ZFGameKit_zfprojConfig.framework */; settings = {ATTRIBUTES = (Weak, ); }; };
+		33DD567C2C657F7EC256B8858B1CEB53 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 69F54ADE8B4E4E709B6BB5D656AC2D82 /* Foundation.framework */; };
+		5C899A7F52D139FD904C6E8B80DC26CE /* zfgensrc_ZFGameKit.mm in Sources */ = {isa = PBXBuildFile; fileRef = 4646AE143AF49E00786EF44897D0F34A /* zfgensrc_ZFGameKit.mm */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
-		0BF289E52A35365F011285E3367853CF /* CopyFiles */ = {
+		79216BF9AD36BCFF2ABA7F4F9FB62047 /* CopyFiles */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
 			dstPath = "include/$(PRODUCT_NAME)";
@@ -25,116 +25,116 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		6BE6648F83B575ECC2F1FF22A2122010 /* zfgensrc_ZFGameKit.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = zfgensrc_ZFGameKit.mm; sourceTree = "<group>"; };
-		90135995939004FBCBD435ACC2CFDFD4 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = System/Library/Frameworks/Foundation.framework; sourceTree = SDKROOT; };
-		AC38BB5C7A4A7290F0300066FCF05545 /* libZFGameKit.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libZFGameKit.a; sourceTree = BUILT_PRODUCTS_DIR; };
-		E06AE40EF734153C349D3E6F10BBA2A7 /* ZFGameKit_zfprojConfig.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = ZFGameKit_zfprojConfig.framework; sourceTree = BUILT_PRODUCTS_DIR; };
-		FA220DEA08D07730D9D4E37AC5914922 /* zfsrc */ = {isa = PBXFileReference; lastKnownFileType = folder; name = zfsrc; path = ../../../zfsrc; sourceTree = "<group>"; };
+		242C224E6A6DF9AC3E01C120B5E97735 /* ZFGameKit_zfprojConfig.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = ZFGameKit_zfprojConfig.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		3961369B2B1F0D9C0BE4BBCF3C789946 /* libZFGameKit.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libZFGameKit.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		4646AE143AF49E00786EF44897D0F34A /* zfgensrc_ZFGameKit.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = zfgensrc_ZFGameKit.mm; sourceTree = "<group>"; };
+		69F54ADE8B4E4E709B6BB5D656AC2D82 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = System/Library/Frameworks/Foundation.framework; sourceTree = SDKROOT; };
+		AA34C8D8F6EE6E2157C61792130BF099 /* zfsrc */ = {isa = PBXFileReference; lastKnownFileType = folder; name = zfsrc; path = ../../../zfsrc; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		D7166C6F243FC6F3F9CFA92E2BC0AC39 /* zfsrc_ext */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); name = zfsrc_ext; path = ../../../zfsrc_ext; sourceTree = SOURCE_ROOT; };
+		A69E532DD1286DD3F5A43DB6B73A2C68 /* zfsrc_ext */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); name = zfsrc_ext; path = ../../../zfsrc_ext; sourceTree = SOURCE_ROOT; };
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
-		7346E7C3027E6E02E6465BA9CC84EF74 /* Frameworks */ = {
+		99B53922407B5D772212D13767B59E79 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				053692DDAE39E8EF679FD77E7752D171 /* Foundation.framework in Frameworks */,
-				0F3707FBFD241EE2981208C92071E357 /* ZFGameKit_zfprojConfig.framework in Frameworks */,
+				33DD567C2C657F7EC256B8858B1CEB53 /* Foundation.framework in Frameworks */,
+				0F8B919A5EA18694F792DD6CC0D4671E /* ZFGameKit_zfprojConfig.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		B0AD11D6FA8E0E247C07EFC3F3D5A64C /* ZFGameKit */ = {
+		83F95874BA2FD36B59CC21AADC56DCBF /* ZFGameKit */ = {
 			isa = PBXGroup;
 			children = (
-				FA220DEA08D07730D9D4E37AC5914922 /* zfsrc */,
-				D7166C6F243FC6F3F9CFA92E2BC0AC39 /* zfsrc_ext */,
+				AA34C8D8F6EE6E2157C61792130BF099 /* zfsrc */,
+				A69E532DD1286DD3F5A43DB6B73A2C68 /* zfsrc_ext */,
 			);
 			name = ZFGameKit;
 			sourceTree = "<group>";
 		};
-		A7AC7C6A3766BC0F974F243354ACE0DA /* ProjectFiles */ = {
+		4D4A66C4F1CCFE19A0CFC09C7FF4783F /* ProjectFiles */ = {
 			isa = PBXGroup;
 			children = (
-				6BE6648F83B575ECC2F1FF22A2122010 /* zfgensrc_ZFGameKit.mm */,
+				4646AE143AF49E00786EF44897D0F34A /* zfgensrc_ZFGameKit.mm */,
 			);
 			path = ProjectFiles;
 			sourceTree = "<group>";
 		};
-		9AC85D5896D896ADEB61DF087F81BD50 /* Products */ = {
+		ED7637836C11DCE169B282BB34D976E3 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				AC38BB5C7A4A7290F0300066FCF05545 /* libZFGameKit.a */,
+				3961369B2B1F0D9C0BE4BBCF3C789946 /* libZFGameKit.a */,
 			);
 			name = Products;
 			sourceTree = "<group>";
 		};
-		616B91549D217173C61C26A44557E7C1 /* Frameworks */ = {
+		5C7DA1FF1771BC639DB3A1801D1E9171 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
-				90135995939004FBCBD435ACC2CFDFD4 /* Foundation.framework */,
-				E06AE40EF734153C349D3E6F10BBA2A7 /* ZFGameKit_zfprojConfig.framework */,
+				69F54ADE8B4E4E709B6BB5D656AC2D82 /* Foundation.framework */,
+				242C224E6A6DF9AC3E01C120B5E97735 /* ZFGameKit_zfprojConfig.framework */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
 		};
-		351309B9B694C36206003AA6F10D4474 = {
+		2BEF96D2D99D53C27930B3150A5E8391 = {
 			isa = PBXGroup;
 			children = (
-				616B91549D217173C61C26A44557E7C1 /* Frameworks */,
-				9AC85D5896D896ADEB61DF087F81BD50 /* Products */,
-				A7AC7C6A3766BC0F974F243354ACE0DA /* ProjectFiles */,
-				B0AD11D6FA8E0E247C07EFC3F3D5A64C /* ZFGameKit */,
+				5C7DA1FF1771BC639DB3A1801D1E9171 /* Frameworks */,
+				ED7637836C11DCE169B282BB34D976E3 /* Products */,
+				4D4A66C4F1CCFE19A0CFC09C7FF4783F /* ProjectFiles */,
+				83F95874BA2FD36B59CC21AADC56DCBF /* ZFGameKit */,
 			);
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		2F22BAD0E8E1179001BD277D70C1FA10 /* ZFGameKit */ = {
+		0164853434B3765F0F1431F0B9FAF406 /* ZFGameKit */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 9771D3AD6EAC09AF851DE11719DC7584 /* Build configuration list for PBXNativeTarget "ZFGameKit" */;
+			buildConfigurationList = 1AFA994C1F63A240232A3376902396D8 /* Build configuration list for PBXNativeTarget "ZFGameKit" */;
 			buildPhases = (
-				5C10EBC49472CDE6331F8D23BC21351D /* ZFCompileSource */,
-				CFB4F27A15228AFDAEBA69C3829F4754 /* Sources */,
-				7346E7C3027E6E02E6465BA9CC84EF74 /* Frameworks */,
-				0BF289E52A35365F011285E3367853CF /* CopyFiles */,
-				9ED959CBB6936D45D6D924452474C08B /* ZFUniqueProj */,
+				3DE5EBF353764923A73B24A559C8842E /* ZFCompileSource */,
+				64A183BE0BFD19FEC64D4805213D92FB /* Sources */,
+				99B53922407B5D772212D13767B59E79 /* Frameworks */,
+				79216BF9AD36BCFF2ABA7F4F9FB62047 /* CopyFiles */,
+				F19AFB95EE22DE674C25324CA7ECC590 /* ZFUniqueProj */,
 			);
 			buildRules = (
 			);
 			dependencies = (
 			);
 			fileSystemSynchronizedGroups = (
-				D7166C6F243FC6F3F9CFA92E2BC0AC39 /* zfsrc_ext */,
+				A69E532DD1286DD3F5A43DB6B73A2C68 /* zfsrc_ext */,
 			);
 			name = ZFGameKit;
 			productName = ZFGameKit;
-			productReference = AC38BB5C7A4A7290F0300066FCF05545 /* libZFGameKit.a */;
+			productReference = 3961369B2B1F0D9C0BE4BBCF3C789946 /* libZFGameKit.a */;
 			productType = "com.apple.product-type.library.static";
 		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
-		90A2EB83332A4B13C9D4AD1CD667FCEA /* Project object */ = {
+		89B3BB0B573D788593F739A812AC928A /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = YES;
 				LastUpgradeCheck = 2620;
 				ORGANIZATIONNAME = ZFFramework;
 				TargetAttributes = {
-					2F22BAD0E8E1179001BD277D70C1FA10 = {
+					0164853434B3765F0F1431F0B9FAF406 = {
 						CreatedOnToolsVersion = 9.2;
 						ProvisioningStyle = Automatic;
 					};
 				};
 			};
-			buildConfigurationList = 7308CCF6616C10DDBB019FF119389D2A /* Build configuration list for PBXProject "ZFGameKit" */;
+			buildConfigurationList = B3F6B491E063D07C13BB8079B2F6D286 /* Build configuration list for PBXProject "ZFGameKit" */;
 			compatibilityVersion = "Xcode 8.0";
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
@@ -142,18 +142,18 @@
 				en,
 				Base,
 			);
-			mainGroup = 351309B9B694C36206003AA6F10D4474;
-			productRefGroup = 9AC85D5896D896ADEB61DF087F81BD50 /* Products */;
+			mainGroup = 2BEF96D2D99D53C27930B3150A5E8391;
+			productRefGroup = ED7637836C11DCE169B282BB34D976E3 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				2F22BAD0E8E1179001BD277D70C1FA10 /* ZFGameKit */,
+				0164853434B3765F0F1431F0B9FAF406 /* ZFGameKit */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXShellScriptBuildPhase section */
-		5C10EBC49472CDE6331F8D23BC21351D /* ZFCompileSource */ = {
+		3DE5EBF353764923A73B24A559C8842E /* ZFCompileSource */ = {
 			isa = PBXShellScriptBuildPhase;
 			alwaysOutOfDate = 1;
 			buildActionMask = 2147483647;
@@ -169,7 +169,7 @@
 			shellPath = /bin/sh;
 			shellScript = "sh \"${SRCROOT}/../../../../../../ZFFramework/tools/common/unity_build.sh\" \"${SRCROOT}/ProjectFiles/zfgensrc_ZFGameKit.mm\" \"${SRCROOT}/../../../zfsrc\"";
 		};
-		9ED959CBB6936D45D6D924452474C08B /* ZFUniqueProj */ = {
+		F19AFB95EE22DE674C25324CA7ECC590 /* ZFUniqueProj */ = {
 			isa = PBXShellScriptBuildPhase;
 			alwaysOutOfDate = 1;
 			buildActionMask = 2147483647;
@@ -187,18 +187,18 @@
 /* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
-		CFB4F27A15228AFDAEBA69C3829F4754 /* Sources */ = {
+		64A183BE0BFD19FEC64D4805213D92FB /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				84D254C9C78ACA05877627A2BBFC9C52 /* zfgensrc_ZFGameKit.mm in Sources */,
+				5C899A7F52D139FD904C6E8B80DC26CE /* zfgensrc_ZFGameKit.mm in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin XCBuildConfiguration section */
-		CE9365270E89A3E1A1C1257E76D85632 /* Debug */ = {
+		901FBF46C0D8144535BA65ECD411844C /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CLANG_ENABLE_OBJC_ARC = YES;
@@ -224,7 +224,7 @@
 			};
 			name = Debug;
 		};
-		449CCA25631C376AE8415BBE638AB6CE /* Release */ = {
+		2F4DE2FC6D4BFB7A19D7E67136401AB2 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CLANG_ENABLE_OBJC_ARC = YES;
@@ -250,7 +250,7 @@
 			};
 			name = Release;
 		};
-		B7995E15743A003A3D0ACD587CBE718A /* Debug */ = {
+		BFD341D6E1E0D8AE69D52B4967FC156E /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
@@ -306,7 +306,7 @@
 			};
 			name = Debug;
 		};
-		436B8BC953EDD7B938EECBF95CBD580D /* Release */ = {
+		381CC18C9ABA273D1299F6C88999EFB6 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
@@ -359,25 +359,25 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		9771D3AD6EAC09AF851DE11719DC7584 /* Build configuration list for PBXNativeTarget "ZFGameKit" */ = {
+		1AFA994C1F63A240232A3376902396D8 /* Build configuration list for PBXNativeTarget "ZFGameKit" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				CE9365270E89A3E1A1C1257E76D85632 /* Debug */,
-				449CCA25631C376AE8415BBE638AB6CE /* Release */,
+				901FBF46C0D8144535BA65ECD411844C /* Debug */,
+				2F4DE2FC6D4BFB7A19D7E67136401AB2 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		7308CCF6616C10DDBB019FF119389D2A /* Build configuration list for PBXProject "ZFGameKit" */ = {
+		B3F6B491E063D07C13BB8079B2F6D286 /* Build configuration list for PBXProject "ZFGameKit" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				B7995E15743A003A3D0ACD587CBE718A /* Debug */,
-				436B8BC953EDD7B938EECBF95CBD580D /* Release */,
+				BFD341D6E1E0D8AE69D52B4967FC156E /* Debug */,
+				381CC18C9ABA273D1299F6C88999EFB6 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 	};
-	rootObject = 90A2EB83332A4B13C9D4AD1CD667FCEA /* Project object */;
+	rootObject = 89B3BB0B573D788593F739A812AC928A /* Project object */;
 }
