@@ -9,6 +9,7 @@
 #include "ZFGameKitDef.h"
 ZF_NAMESPACE_GLOBAL_BEGIN
 
+#define _ZFP_P2GamePadButtonCount 28
 /**
  * @brief game pad button define
  */

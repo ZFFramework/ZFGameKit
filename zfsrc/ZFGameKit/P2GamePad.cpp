@@ -19,7 +19,7 @@ public:
     public:
         ZFObserver ob;
         zfbool connected;
-        zffloat value[v_P2GamePadButton::ZFEnumCount];
+        zffloat value[_ZFP_P2GamePadButtonCount];
     public:
         void valueRemoveAll(void) {
             zfmemset(this->value, 0, sizeof(this->value));
