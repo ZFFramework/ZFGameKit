@@ -30,6 +30,18 @@ ZFMETHOD_FUNC_DECLARE_2(ZFLIB_ZFGameKit, void, P2GamePadImpl_notifyPadChange
         , ZFMP_IN(zfbool, connected)
         )
 
+// ============================================================
+/**
+ * @brief protocol for P2GamePad
+ *
+ * this is a dummy protocol for convenient,
+ * use #P2GamePadImpl_notifyPadChange and #P2GamePadImpl_notifyButtonValue
+ * for actual impl
+ */
+ZFPROTOCOL_INTERFACE_BEGIN(ZFLIB_ZFGameKit, P2GamePad)
+ZFPROTOCOL_INTERFACE_OPTIONAL
+ZFPROTOCOL_INTERFACE_END(P2GamePad)
+
 ZF_NAMESPACE_GLOBAL_END
 #endif // #ifndef _ZFI_ZFProtocolP2GamePad_h_
 

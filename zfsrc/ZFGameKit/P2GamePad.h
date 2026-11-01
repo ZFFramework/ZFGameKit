@@ -9,7 +9,6 @@
 #include "ZFGameKitDef.h"
 ZF_NAMESPACE_GLOBAL_BEGIN
 
-#define _ZFP_P2GamePadButtonCount 28
 /**
  * @brief game pad button define
  */
@@ -132,6 +131,73 @@ ZFMETHOD_FUNC_DECLARE_2(ZFLIB_ZFGameKit, zffloat, P2GamePadValue
  * -  the index ranged in [0, #P2GamePadMax)
  */
 ZFMETHOD_FUNC_DECLARE_0(ZFLIB_ZFGameKit, ZFCoreArray<zfindex>, P2GamePadIndexList)
+
+// ============================================================
+/**
+ * @brief remap game pad, set `to` to #ZFEnumInvalid to remove remap
+ */
+ZFMETHOD_FUNC_DECLARE_3(ZFLIB_ZFGameKit, void, P2GamePadRemap
+        , ZFMP_IN(P2GamePadButton, from)
+        , ZFMP_IN(P2GamePadButton, to)
+        , ZFMP_IN_OPT(zfindex, padIndex, 0)
+        )
+/**
+ * @brief remap game pad, set `to` to #ZFEnumInvalid to remove remap
+ */
+ZFMETHOD_FUNC_DECLARE_3(ZFLIB_ZFGameKit, void, P2GamePadRemap
+        , ZFMP_IN(ZFUIKeyCode, from)
+        , ZFMP_IN(P2GamePadButton, to)
+        , ZFMP_IN_OPT(zfindex, padIndex, 0)
+        )
+
+/**
+ * @brief get current remap, return #ZFEnumInvalid if none
+ */
+ZFMETHOD_FUNC_DECLARE_2(ZFLIB_ZFGameKit, P2GamePadButton, P2GamePadRemapGet
+        , ZFMP_IN(P2GamePadButton, from)
+        , ZFMP_IN_OPT(zfindex, padIndex, 0)
+        )
+/**
+ * @brief get current remap, return #ZFEnumInvalid if none
+ */
+ZFMETHOD_FUNC_DECLARE_2(ZFLIB_ZFGameKit, P2GamePadButton, P2GamePadRemapGet
+        , ZFMP_IN(ZFUIKeyCode, from)
+        , ZFMP_IN_OPT(zfindex, padIndex, 0)
+        )
+
+/**
+ * @brief get all of current remap
+ */
+ZFMETHOD_FUNC_DECLARE_1(ZFLIB_ZFGameKit, zfautoT<ZFHashMap>, P2GamePadRemapGetAllGamePadButton
+        , ZFMP_IN_OPT(zfindex, padIndex, 0)
+        )
+/**
+ * @brief get all of current remap
+ */
+ZFMETHOD_FUNC_DECLARE_1(ZFLIB_ZFGameKit, zfautoT<ZFHashMap>, P2GamePadRemapGetAllKeyCode
+        , ZFMP_IN_OPT(zfindex, padIndex, 0)
+        )
+
+/**
+ * @brief remove all remap
+ */
+ZFMETHOD_FUNC_DECLARE_1(ZFLIB_ZFGameKit, void, P2GamePadRemapRemoveAll
+        , ZFMP_IN_OPT(zfindex, padIndex, 0)
+        )
+
+/**
+ * @brief save remap to state
+ */
+ZFMETHOD_FUNC_DECLARE_1(ZFLIB_ZFGameKit, zfautoT<ZFHashMap>, P2GamePadRemapSave
+        , ZFMP_IN_OPT(zfindex, padIndex, 0)
+        )
+/**
+ * @brief load remap from state
+ */
+ZFMETHOD_FUNC_DECLARE_2(ZFLIB_ZFGameKit, void, P2GamePadRemapLoad
+        , ZFMP_IN(ZFHashMap *, state)
+        , ZFMP_IN_OPT(zfindex, padIndex, 0)
+        )
 
 ZF_NAMESPACE_GLOBAL_END
 #endif // #ifndef _ZFI_P2GamePad_h_
