@@ -21,7 +21,6 @@ public:
         zfbool connected;
         ZFCoreMap<P2GamePadButton, zffloat> valueMap;
         ZFCoreMap<P2GamePadButton, P2GamePadButton> remapMap;
-        ZFCoreMap<ZFUIKeyCode, P2GamePadButton> remapKeyMap;
     public:
         void valueMapRemoveAll(void) {
             for(zfiter it = valueMap.iter(); it; ++it) {
@@ -53,6 +52,41 @@ public:
             ZFGlobalObserver().observerNotify(ZFGlobalEvent::E_P2GamePadChange());
         }
         return pad;
+    }
+    static ZFCoreMap<ZFUIKeyCode, ZFCoreMap<zfindex, P2GamePadButton> > &remapKeyMap(void) {
+        static ZFCoreMap<ZFUIKeyCode, ZFCoreMap<zfindex, P2GamePadButton> > d;
+        return d;
+    }
+    static void remapKeyObserverUpdate(void) {
+        static ZFListener _attached;
+        if(_attached.valid() == !remapKeyMap().isEmpty()) {
+            return;
+        }
+        if(remapKeyMap().isEmpty()) {
+            ZFGlobalObserver().observerRemove(ZFUIView::E_ViewOnEvent(), _attached);
+            _attached = zfnull;
+        }
+        else {
+            _attached = ZFCallbackForFunc(_viewOnEvent);
+            ZFGlobalObserver().observerAdd(ZFUIView::E_ViewOnEvent(), _attached, ZFLevelZFFrameworkNormal);
+        }
+    }
+private:
+    static void _viewOnEvent(ZF_IN const ZFArgs &zfargs) {
+        ZFUIKeyEvent *event = zfargs.param0();
+        if(!event) {
+            return;
+        }
+        switch(event->keyAction) {
+            case v_ZFUIKeyAction::e_Down:
+            case v_ZFUIKeyAction::e_Repeat:
+                break;
+            case v_ZFUIKeyAction::e_Up:
+            case v_ZFUIKeyAction::e_Cancel:
+                break;
+            default:
+                return;
+        }
     }
 };
 
@@ -117,12 +151,24 @@ ZFMETHOD_FUNC_DEFINE_3(void, P2GamePadRemap
         , ZFMP_IN(P2GamePadButton, to)
         , ZFMP_IN_OPT(zfindex, padIndex, 0)
         ) {
-    if(from == ZFEnumInvalid() || to == ZFEnumInvalid()) {
-        _ZFP_P2GamePad::pads()[padIndex].remapKeyMap.remove(from);
+    if(from == ZFEnumInvalid()) {
+        return;
+    }
+    ZFCoreMap<ZFUIKeyCode, ZFCoreMap<zfindex, P2GamePadButton> > &m = _ZFP_P2GamePad::remapKeyMap();
+    zfiter it = m.iterFind(from);
+    if(to == ZFEnumInvalid()) {
+        if(it) {
+            ZFCoreMap<zfindex, P2GamePadButton> &t = m.iterValue(it);
+            t.remove(padIndex);
+            if(t.isEmpty()) {
+                m.iterRemove(it);
+            }
+        }
     }
     else {
-        _ZFP_P2GamePad::pads()[padIndex].remapKeyMap.access(from) = to;
+        m.access(from).access(padIndex) = to;
     }
+    _ZFP_P2GamePad::remapKeyObserverUpdate();
 }
 
 ZFMETHOD_FUNC_DEFINE_2(P2GamePadButton, P2GamePadRemapGet
@@ -142,14 +188,16 @@ ZFMETHOD_FUNC_DEFINE_2(P2GamePadButton, P2GamePadRemapGet
         , ZFMP_IN(ZFUIKeyCode, from)
         , ZFMP_IN_OPT(zfindex, padIndex, 0)
         ) {
-    ZFCoreMap<ZFUIKeyCode, P2GamePadButton> &m = _ZFP_P2GamePad::pads()[padIndex].remapKeyMap;
+    ZFCoreMap<ZFUIKeyCode, ZFCoreMap<zfindex, P2GamePadButton> > &m = _ZFP_P2GamePad::remapKeyMap();
     zfiter it = m.iterFind(from);
     if(it) {
-        return m.iterValue(it);
+        ZFCoreMap<zfindex, P2GamePadButton> &t = m.iterValue(it);
+        zfiter it2 = t.iterFind(padIndex);
+        if(it2) {
+            return t.iterValue(it2);
+        }
     }
-    else {
-        return (P2GamePadButton)ZFEnumInvalid();
-    }
+    return (P2GamePadButton)ZFEnumInvalid();
 }
 
 ZFMETHOD_FUNC_DEFINE_1(zfautoT<ZFHashMap>, P2GamePadRemapGetAllGamePadButton
@@ -169,12 +217,18 @@ ZFMETHOD_FUNC_DEFINE_1(zfautoT<ZFHashMap>, P2GamePadRemapGetAllKeyCode
         , ZFMP_IN_OPT(zfindex, padIndex, 0)
         ) {
     zfobj<ZFHashMap> ret;
-    ZFCoreMap<ZFUIKeyCode, P2GamePadButton> &m = _ZFP_P2GamePad::pads()[padIndex].remapKeyMap;
+    ZFCoreMap<ZFUIKeyCode, ZFCoreMap<zfindex, P2GamePadButton> > &m = _ZFP_P2GamePad::remapKeyMap();
     for(zfiter it = m.iter(); it; ++it) {
-        ret->set(
-                zfobj<v_ZFUIKeyCode>(m.iterKey(it))
-                , zfobj<v_P2GamePadButton>(m.iterValue(it))
-                );
+        if(m.iterKey(it) != padIndex) {
+            continue;
+        }
+        ZFCoreMap<zfindex, P2GamePadButton> &t = m.iterValue(it);
+        for(zfiter it2 = t.iter(); it2; ++it2) {
+            ret->set(
+                    zfobj<v_ZFUIKeyCode>(m.iterKey(it))
+                    , zfobj<v_P2GamePadButton>(t.iterValue(it2))
+                    );
+        }
     }
     return ret;
 }
@@ -183,7 +237,19 @@ ZFMETHOD_FUNC_DEFINE_1(void, P2GamePadRemapRemoveAll
         , ZFMP_IN_OPT(zfindex, padIndex, 0)
         ) {
     _ZFP_P2GamePad::pads()[padIndex].remapMap.removeAll();
-    _ZFP_P2GamePad::pads()[padIndex].remapKeyMap.removeAll();
+
+    ZFCoreMap<ZFUIKeyCode, ZFCoreMap<zfindex, P2GamePadButton> > &m = _ZFP_P2GamePad::remapKeyMap();
+    for(zfiter it = m.iter(); it; ) {
+        ZFCoreMap<zfindex, P2GamePadButton> &t = m.iterValue(it);
+        t.remove(padIndex);
+        if(t.isEmpty()) {
+            m.iterRemove(it);
+        }
+        else {
+            ++it;
+        }
+    }
+    _ZFP_P2GamePad::remapKeyObserverUpdate();
 }
 
 ZFMETHOD_FUNC_DEFINE_1(zfautoT<ZFHashMap>, P2GamePadRemapSave
@@ -200,12 +266,18 @@ ZFMETHOD_FUNC_DEFINE_1(zfautoT<ZFHashMap>, P2GamePadRemapSave
         }
     }
     {
-        ZFCoreMap<ZFUIKeyCode, P2GamePadButton> &m = _ZFP_P2GamePad::pads()[padIndex].remapKeyMap;
+        ZFCoreMap<ZFUIKeyCode, ZFCoreMap<zfindex, P2GamePadButton> > &m = _ZFP_P2GamePad::remapKeyMap();
         for(zfiter it = m.iter(); it; ++it) {
-            ret->set(
-                    zfobj<v_ZFUIKeyCode>(m.iterKey(it))
-                    , zfobj<v_P2GamePadButton>(m.iterValue(it))
-                    );
+            if(m.iterKey(it) != padIndex) {
+                continue;
+            }
+            ZFCoreMap<zfindex, P2GamePadButton> &t = m.iterValue(it);
+            for(zfiter it2 = t.iter(); it2; ++it2) {
+                ret->set(
+                        zfobj<v_ZFUIKeyCode>(m.iterKey(it))
+                        , zfobj<v_P2GamePadButton>(t.iterValue(it2))
+                        );
+            }
         }
     }
     return ret;
