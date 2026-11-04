@@ -268,11 +268,11 @@ ZFMETHOD_FUNC_DEFINE_1(zfautoT<ZFHashMap>, P2GamePadRemapSave
     {
         ZFCoreMap<ZFUIKeyCode, ZFCoreMap<zfindex, P2GamePadButton> > &m = _ZFP_P2GamePad::remapKeyMap();
         for(zfiter it = m.iter(); it; ++it) {
-            if(m.iterKey(it) != padIndex) {
-                continue;
-            }
             ZFCoreMap<zfindex, P2GamePadButton> &t = m.iterValue(it);
             for(zfiter it2 = t.iter(); it2; ++it2) {
+                if(t.iterKey(it2) != padIndex) {
+                    continue;
+                }
                 ret->set(
                         zfobj<v_ZFUIKeyCode>(m.iterKey(it))
                         , zfobj<v_P2GamePadButton>(t.iterValue(it2))
