@@ -7,6 +7,7 @@ ZFENUM_DEFINE(P2GamePadButton)
 
 ZF_NAMESPACE_BEGIN(ZFGlobalEvent)
 ZFEVENT_GLOBAL_REGISTER(P2GamePadChange)
+ZFEVENT_GLOBAL_REGISTER(P2GamePadButtonUpdate)
 ZF_NAMESPACE_END(ZFGlobalEvent)
 
 // ============================================================
@@ -24,7 +25,7 @@ public:
     public:
         void valueMapRemoveAll(void) {
             for(zfiter it = valueMap.iter(); it; ++it) {
-                valueMap.iterValue(0);
+                valueMap.iterValue(it, 0);
             }
         }
     };
@@ -91,6 +92,12 @@ private:
 };
 
 ZF_GLOBAL_INITIALIZER_INIT_WITH_LEVEL(P2GamePadCleanup, ZFLevelZFFrameworkNormal) {
+    // access to ensure init order
+    _ZFP_P2GamePad::pads();
+    _ZFP_P2GamePad::indexList();
+    _ZFP_P2GamePad::remapKeyMap();
+
+    ZFPROTOCOL_TRY_ACCESS(P2GamePad);
 }
 ZF_GLOBAL_INITIALIZER_DESTROY(P2GamePadCleanup) {
     _ZFP_P2GamePad::Pad *pads = _ZFP_P2GamePad::pads();
@@ -332,7 +339,7 @@ ZFMETHOD_FUNC_DEFINE_3(void, P2GamePadImpl_notifyButtonValue
     zffloat &valueRef = pad.valueMap.access(btn);
     if(valueRef != value) {
         valueRef = value;
-        pad.ob.observerNotify(zfidentityInvalid(), ZFArgs()
+        pad.ob.observerNotify(ZFGlobalEvent::E_P2GamePadButtonUpdate(), ZFArgs()
                 .param0(zfobj<v_P2GamePadButton>(btn))
                 .param1(zfobj<v_zffloat>(value))
                 );

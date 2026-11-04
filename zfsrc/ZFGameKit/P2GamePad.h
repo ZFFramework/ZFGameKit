@@ -79,6 +79,10 @@ ZF_NAMESPACE_BEGIN(ZFGlobalEvent)
  * @brief called when #P2GamePadIndexList changed
  */
 ZFEVENT_GLOBAL(ZFLIB_ZFGameKit, P2GamePadChange)
+/**
+ * @brief called when any button value changed, see #P2GamePadObserver
+ */
+ZFEVENT_GLOBAL(ZFLIB_ZFGameKit, P2GamePadButtonUpdate)
 ZF_NAMESPACE_END(ZFGlobalEvent)
 
 /**
@@ -89,6 +93,7 @@ ZFMETHOD_FUNC_DECLARE_0(ZFLIB_ZFGameKit, zfindex, P2GamePadMax)
 /**
  * @brief return an observer for specified padIndex
  *
+ * attach observer with #ZFGlobalEvent::E_P2GamePadButtonUpdate,
  * callback's param0 would be a #v_P2GamePadButton holds button
  * whose #P2GamePadPressed or #P2GamePadValue changed,
  * param1 would be a #v_zfbool holds #P2GamePadPressed
