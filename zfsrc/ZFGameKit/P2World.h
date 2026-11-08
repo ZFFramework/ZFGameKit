@@ -747,6 +747,48 @@ public:
 };
 
 // ============================================================
+/** @brief see #P2Unit::p2_ext */
+zfclass ZFLIB_ZFGameKit P2Ext : zfextend ZFStyle {
+    ZFOBJECT_DECLARE_WITH_CUSTOM_CTOR(P2Ext, ZFStyle)
+
+public:
+    /**
+     * @brief see #ZFObject::observerNotify
+     *
+     * called when attached to #P2Unit::p2_ext,
+     * param0 is the owner #P2Unit
+     */
+    ZFEVENT(P2ExtOnAttach)
+    /**
+     * @brief see #ZFObject::observerNotify
+     *
+     * called when detached from #P2Unit::p2_ext,
+     * param0 is the owner #P2Unit
+     */
+    ZFEVENT(P2ExtOnDetach)
+
+public:
+    /** @brief see #P2Unit::p2_ext */
+    ZFMETHOD_DECLARE_0(P2Unit *, p2_ownerUnit)
+
+protected:
+    /** @brief see #P2Ext::E_P2ExtOnAttach */
+    virtual void p2_extOnAttach(ZF_IN P2Unit *owner) {
+    }
+    /** @brief see #P2Ext::E_P2ExtOnDetach */
+    virtual void p2_extOnDetach(ZF_IN P2Unit *owner) {
+    }
+
+private:
+    friend zfclassFwd P2Unit;
+    P2Unit *_ZFP_ownerUnit;
+protected:
+    /** @cond ZFPrivateDoc */
+    P2Ext(void) : _ZFP_ownerUnit(zfnull) {}
+    /** @endcond */
+};
+
+// ============================================================
 zfclassFwd _ZFP_P2UnitPrivate;
 /** @brief see #P2World */
 zfclass ZFLIB_ZFGameKit P2Unit : zfextend ZFStyle {
@@ -849,6 +891,8 @@ public:
     ZFPROPERTY_RETAIN_READONLY(ZFArray *, p2_partList, zfobj<ZFArray>())
     /** @brief see #P2World, must not manually modify */
     ZFPROPERTY_RETAIN_READONLY(ZFArray *, p2_jointList, zfobj<ZFArray>())
+    /** @brief see #P2World, must not manually modify */
+    ZFPROPERTY_RETAIN_READONLY(ZFArray *, p2_extList, zfobj<ZFArray>())
 
 public:
     /** @brief see #P2World */
@@ -905,6 +949,38 @@ public:
     /** @brief see #P2World, note this method is expensive */
     ZFMETHOD_DECLARE_1(P2Joint *, p2_jointFind
             , ZFMP_IN(const zfstring &, jointId)
+            )
+
+public:
+    /**
+     * @brief attach extension for this unit
+     */
+    ZFMETHOD_DECLARE_1(void, p2_ext
+            , ZFMP_IN(P2Ext *, v)
+            )
+    /** @brief see #p2_ext */
+    ZFMETHOD_DECLARE_0(zfindex, p2_extCount)
+    /** @brief see #p2_ext */
+    ZFMETHOD_DECLARE_1(P2Ext *, p2_extAt
+            , ZFMP_IN(zfindex, index)
+            )
+    /** @brief see #p2_ext */
+    ZFMETHOD_DECLARE_1(zfautoT<P2Ext>, p2_extRemoveAt
+            , ZFMP_IN(zfindex, index)
+            )
+    /** @brief see #p2_ext */
+    ZFMETHOD_DECLARE_1(zfautoT<P2Ext>, p2_extRemove
+            , ZFMP_IN(P2Ext *, v)
+            )
+    /** @brief see #p2_ext */
+    ZFMETHOD_DECLARE_0(void, p2_extRemoveAll)
+    /** @brief see #p2_ext */
+    ZFMETHOD_DECLARE_1(zfindex, p2_extFind
+            , ZFMP_IN(const ZFClass *, extCls)
+            )
+    /** @brief see #p2_ext */
+    ZFMETHOD_DECLARE_1(P2Ext *, p2_extAccess
+            , ZFMP_IN(const ZFClass *, extCls)
             )
 
 public:

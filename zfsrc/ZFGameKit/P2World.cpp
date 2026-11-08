@@ -2148,6 +2148,16 @@ void P2Body::objectOnDealloc(void) {
 }
 
 // ============================================================
+ZFOBJECT_REGISTER(P2Ext)
+
+ZFEVENT_REGISTER(P2Ext, P2ExtOnAttach)
+ZFEVENT_REGISTER(P2Ext, P2ExtOnDetach)
+
+ZFMETHOD_DEFINE_0(P2Ext, P2Unit *, p2_ownerUnit) {
+    return _ZFP_ownerUnit;
+}
+
+// ============================================================
 ZFOBJECT_REGISTER(P2Unit)
 
 ZFMETHOD_DEFINE_0(P2Unit, P2World *, p2_ownerWorld) {
@@ -2348,6 +2358,96 @@ ZFMETHOD_DEFINE_1(P2Unit, P2Joint *, p2_jointFind
         }
     }
     return zfnull;
+}
+
+ZFMETHOD_DEFINE_1(P2Unit, void, p2_ext
+        , ZFMP_IN(P2Ext *, v)
+        ) {
+    ZFCoreAssert(v && v->p2_ownerUnit() == zfnull);
+    this->p2_extList()->add(v);
+    v->_ZFP_ownerUnit = this;
+    v->p2_extOnAttach(this);
+    v->observerNotify(P2Ext::E_P2ExtOnAttach(), ZFArgs()
+            .param0(this)
+            );
+}
+ZFMETHOD_DEFINE_0(P2Unit, zfindex, p2_extCount) {
+    return this->p2_extList()->count();
+}
+ZFMETHOD_DEFINE_1(P2Unit, P2Ext *, p2_extAt
+        , ZFMP_IN(zfindex, index)
+        ) {
+    return this->p2_extList()->get(index);
+}
+ZFMETHOD_DEFINE_1(P2Unit, zfautoT<P2Ext>, p2_extRemoveAt
+        , ZFMP_IN(zfindex, index)
+        ) {
+    zfautoT<P2Ext> v = this->p2_extList()->get(index);
+    this->p2_extList()->remove(index);
+    v->observerNotify(P2Ext::E_P2ExtOnDetach(), ZFArgs()
+            .param0(this)
+            );
+    v->p2_extOnDetach(this);
+    return v;
+}
+ZFMETHOD_DEFINE_1(P2Unit, zfautoT<P2Ext>, p2_extRemove
+        , ZFMP_IN(P2Ext *, v)
+        ) {
+    zfindex index = this->p2_extList()->find(v);
+    if(index != zfindexMax()) {
+        return this->p2_extRemoveAt(index);
+    }
+    else {
+        return zfnull;
+    }
+}
+ZFMETHOD_DEFINE_0(P2Unit, void, p2_extRemoveAll) {
+    if(!this->p2_extList()->isEmpty()) {
+        zfobj<ZFArray> tmp;
+        tmp->addFrom(this->p2_extList());
+        this->p2_extList()->removeAll();
+        for(zfindex i = 0; i < tmp->count(); ++i) {
+            P2Ext *v = tmp->get(i);
+            v->observerNotify(P2Ext::E_P2ExtOnDetach(), ZFArgs()
+                    .param0(this)
+                    );
+            v->p2_extOnDetach(this);
+        }
+    }
+}
+ZFMETHOD_DEFINE_1(P2Unit, zfindex, p2_extFind
+        , ZFMP_IN(const ZFClass *, extCls)
+        ) {
+    if(extCls && extCls->classIsTypeOf(P2Ext::ClassData())) {
+        ZFArray *tmp = this->p2_extList();
+        for(zfindex i = 0; i < tmp->count(); ++i) {
+            P2Ext *v = tmp->get(i);
+            if(v && v->classData()->classIsTypeOf(extCls)) {
+                return i;
+            }
+        }
+    }
+    return zfindexMax();
+}
+ZFMETHOD_DEFINE_1(P2Unit, P2Ext *, p2_extAccess
+        , ZFMP_IN(const ZFClass *, extCls)
+        ) {
+    ZFCoreAssert(extCls && extCls->classIsTypeOf(P2Ext::ClassData()));
+    ZFArray *tmp = this->p2_extList();
+    for(zfindex i = 0; i < tmp->count(); ++i) {
+        P2Ext *v = tmp->get(i);
+        if(v && v->classData()->classIsTypeOf(extCls)) {
+            return v;
+        }
+    }
+    zfautoT<P2Ext> v = extCls->newInstance();
+    ZFCoreAssert(v);
+    this->p2_extList()->add(v);
+    v->p2_extOnAttach(this);
+    v->observerNotify(P2Ext::E_P2ExtOnAttach(), ZFArgs()
+            .param0(this)
+            );
+    return v;
 }
 
 ZFMETHOD_DEFINE_0(P2Unit, ZFArray *, p2_refJointList) {
