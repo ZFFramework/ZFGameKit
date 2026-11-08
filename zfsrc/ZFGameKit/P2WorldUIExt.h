@@ -68,43 +68,77 @@ public:
     /** @brief while rotating in #debugMouse mode, try to align rotation with this value */
     ZFPROPERTY_ASSIGN(zffloat, debugMouseRotationAlign, 45)
 
+    // ============================================================
+    /** @brief see #screenTileBg */
+    ZFPROPERTY_RETAIN_READONLY(zfanyT<ZFArray>, screenTileBgList, zfobj<ZFArray>())
+    /** @brief see #screenTileBg */
+    ZFPROPERTY_RETAIN_READONLY(zfanyT<ZFArray>, screenTileFgList, zfobj<ZFArray>())
+
     /**
      * @brief tiled bg automatically updated with #P2World::p2_UIOffset
      *
      * by default, tiles would be updated by #P2World::p2_UIOffset,
      * the update mode can be changed by:
-     * #tileUpdateByUI / #tileSpeed / #tileOffset,
+     * #screenTileUpdateByUI / #screenTileSpeed / #screenTileOffset,
      * and can be checked by:
-     * #tileIsUpdateByUI / #tileIsUpdateBySpeed / #tileIsUpdateByOffset
+     * #screenTileIsUpdateByUI / #screenTileIsUpdateBySpeed / #screenTileIsUpdateByOffset
      */
-    ZFPROPERTY_ASSIGN(ZFCoreArray<zfautoT<P2ScreenTileView> >, tileBg)
-    ZFPROPERTY_ON_UPDATE_DECLARE(ZFCoreArray<zfautoT<P2ScreenTileView> >, tileBg)
-    /** @brief see #tileBg */
-    ZFPROPERTY_ASSIGN(ZFCoreArray<zfautoT<P2ScreenTileView> >, tileFg)
-    ZFPROPERTY_ON_UPDATE_DECLARE(ZFCoreArray<zfautoT<P2ScreenTileView> >, tileFg)
+    ZFMETHOD_DECLARE_1(void, screenTileBg
+            , ZFMP_IN(P2ScreenTileView *, v)
+            )
+    /** @brief see #screenTileBg */
+    ZFMETHOD_DECLARE_0(zfindex, screenTileBgCount)
+    /** @brief see #screenTileBg */
+    ZFMETHOD_DECLARE_1(P2ScreenTileView *, screenTileBgAt
+            , ZFMP_IN(zfindex, index)
+            )
+    /** @brief see #screenTileBg */
+    ZFMETHOD_DECLARE_1(zfautoT<P2ScreenTileView>, screenTileBgRemoveAt
+            , ZFMP_IN(zfindex, index)
+            )
+    /** @brief see #screenTileBg */
+    ZFMETHOD_DECLARE_0(void, screenTileBgRemoveAll)
 
-    /** @brief see #tileBg, make #tileBg and #tileFg auto update by #P2World::p2_UIOffset */
-    ZFMETHOD_DECLARE_0(void, tileUpdateByUI)
-    /** @brief see #tileBg, whether #tileBg and #tileFg update by #tileUpdateByUI */
-    ZFMETHOD_DECLARE_0(zfbool, tileIsUpdateByUI)
+    /** @brief see #screenTileBg */
+    ZFMETHOD_DECLARE_1(void, screenTileFg
+            , ZFMP_IN(P2ScreenTileView *, v)
+            )
+    /** @brief see #screenTileBg */
+    ZFMETHOD_DECLARE_0(zfindex, screenTileFgCount)
+    /** @brief see #screenTileBg */
+    ZFMETHOD_DECLARE_1(P2ScreenTileView *, screenTileFgAt
+            , ZFMP_IN(zfindex, index)
+            )
+    /** @brief see #screenTileBg */
+    ZFMETHOD_DECLARE_1(zfautoT<P2ScreenTileView>, screenTileFgRemoveAt
+            , ZFMP_IN(zfindex, index)
+            )
+    /** @brief see #screenTileBg */
+    ZFMETHOD_DECLARE_0(void, screenTileFgRemoveAll)
 
-    /** @brief see #tileBg, make #tileBg and #tileFg auto update by specified speed */
-    ZFMETHOD_DECLARE_1(void, tileSpeed
+    // ============================================================
+    /** @brief see #screenTileBg, make #screenTileBg and #screenTileFg auto update by #P2World::p2_UIOffset */
+    ZFMETHOD_DECLARE_0(void, screenTileUpdateByUI)
+    /** @brief see #screenTileBg, whether #screenTileBg and #screenTileFg update by #screenTileUpdateByUI */
+    ZFMETHOD_DECLARE_0(zfbool, screenTileIsUpdateByUI)
+
+    /** @brief see #screenTileBg, make #screenTileBg and #screenTileFg auto update by specified speed */
+    ZFMETHOD_DECLARE_1(void, screenTileSpeed
             , ZFMP_IN(const ZFUIPoint &, v)
             )
-    /** @brief #ZFUIPointZero if not #tileIsUpdateBySpeed */
-    ZFMETHOD_DECLARE_0(ZFUIPoint, tileSpeed)
-    /** @brief see #tileBg, whether #tileBg and #tileFg update by #tileSpeed */
-    ZFMETHOD_DECLARE_0(zfbool, tileIsUpdateBySpeed)
+    /** @brief #ZFUIPointZero if not #screenTileIsUpdateBySpeed */
+    ZFMETHOD_DECLARE_0(ZFUIPoint, screenTileSpeed)
+    /** @brief see #screenTileBg, whether #screenTileBg and #screenTileFg update by #screenTileSpeed */
+    ZFMETHOD_DECLARE_0(zfbool, screenTileIsUpdateBySpeed)
 
-    /** @brief see #tileBg, make #tileBg and #tileFg manually update by specified offset */
-    ZFMETHOD_DECLARE_1(void, tileOffset
+    /** @brief see #screenTileBg, make #screenTileBg and #screenTileFg manually update by specified offset */
+    ZFMETHOD_DECLARE_1(void, screenTileOffset
             , ZFMP_IN(const ZFUIPoint &, v)
             )
-    /** @brief #ZFUIPointZero if not #tileIsUpdateByOffset */
-    ZFMETHOD_DECLARE_0(ZFUIPoint, tileOffset)
-    /** @brief see #tileBg, whether #tileBg and #tileFg update by #tileOffset */
-    ZFMETHOD_DECLARE_0(zfbool, tileIsUpdateByOffset)
+    /** @brief #ZFUIPointZero if not #screenTileIsUpdateByOffset */
+    ZFMETHOD_DECLARE_0(ZFUIPoint, screenTileOffset)
+    /** @brief see #screenTileBg, whether #screenTileBg and #screenTileFg update by #screenTileOffset */
+    ZFMETHOD_DECLARE_0(zfbool, screenTileIsUpdateByOffset)
 
 protected:
     zfoverride

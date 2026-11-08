@@ -199,6 +199,19 @@ ZFMETHOD_DEFINE_0(P2TileView, void, tileShapeUpdate) {
 void P2TileView::objectOnInit(void) {
     zfsuper::objectOnInit();
     d = zfpoolNew(_ZFP_P2TileViewPrivate);
+
+    zfclassNotPOD _Impl {
+    public:
+        static void post(ZF_IN const ZFArgs &zfargs) {
+            P2TileView *owner = zfargs.sender();
+            owner->tileCreate(
+                    owner->tileWidth()
+                    , owner->tileHeight()
+                    , owner->tileHoles()
+                    );
+        }
+    };
+    this->observerAdd(ZFSerializable::E_SerializeFromPost(), ZFCallbackForFunc(_Impl::post));
 }
 void P2TileView::objectOnDealloc(void) {
     zfpoolDelete(d);

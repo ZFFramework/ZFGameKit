@@ -556,8 +556,8 @@ public:
     /** @brief see #P2World, note: auto remove #p2_ownerUnit if this body is main #P2Unit::p2_body */
     ZFMETHOD_DECLARE_0(void, p2_removeFromParent)
 
-    /** @brief see #P2World */
-    ZFPROPERTY_RETAIN_READONLY(ZFArray *, p2_shapeList, zfobj<ZFArray>())
+    /** @brief see #P2World, must not manually modify */
+    ZFPROPERTY_RETAIN_READONLY(zfanyT<ZFArray>, p2_shapeList, zfobj<ZFArray>())
     /** @brief see #P2World */
     ZFMETHOD_DECLARE_1(void, p2_shape
             , ZFMP_IN(P2Shape *, shape)
@@ -747,6 +747,7 @@ public:
 };
 
 // ============================================================
+zfclassFwd _ZFP_P2ExtPrivate;
 /** @brief see #P2Unit::p2_ext */
 zfclass ZFLIB_ZFGameKit P2Ext : zfextend ZFStyle {
     ZFOBJECT_DECLARE_WITH_CUSTOM_CTOR(P2Ext, ZFStyle)
@@ -780,7 +781,7 @@ protected:
     }
 
 private:
-    friend zfclassFwd P2Unit;
+    friend zfclassFwd _ZFP_P2ExtPrivate;
     P2Unit *_ZFP_ownerUnit;
 protected:
     /** @cond ZFPrivateDoc */
@@ -884,15 +885,15 @@ public:
     ZFPROPERTY_ON_UPDATE_DECLARE(zffloat, p2_unitScale)
 
     /** @brief see #P2World */
-    ZFPROPERTY_RETAIN(P2Body *, p2_body)
+    ZFPROPERTY_RETAIN(zfanyT<P2Body>, p2_body)
     ZFPROPERTY_ON_ATTACH_DECLARE(P2Body *, p2_body)
     ZFPROPERTY_ON_DETACH_DECLARE(P2Body *, p2_body)
     /** @brief see #P2World, must not manually modify */
-    ZFPROPERTY_RETAIN_READONLY(ZFArray *, p2_partList, zfobj<ZFArray>())
+    ZFPROPERTY_RETAIN_READONLY(zfanyT<ZFArray>, p2_partList, zfobj<ZFArray>())
     /** @brief see #P2World, must not manually modify */
-    ZFPROPERTY_RETAIN_READONLY(ZFArray *, p2_jointList, zfobj<ZFArray>())
+    ZFPROPERTY_RETAIN_READONLY(zfanyT<ZFArray>, p2_jointList, zfobj<ZFArray>())
     /** @brief see #P2World, must not manually modify */
-    ZFPROPERTY_RETAIN_READONLY(ZFArray *, p2_extList, zfobj<ZFArray>())
+    ZFPROPERTY_RETAIN_READONLY(zfanyT<ZFArray>, p2_extList, zfobj<ZFArray>())
 
 public:
     /** @brief see #P2World */
@@ -1307,7 +1308,7 @@ public:
 
 public:
     /** @brief see #P2World, must not manually modify */
-    ZFPROPERTY_RETAIN_READONLY(ZFArray *, p2_unitList, zfobj<ZFArray>())
+    ZFPROPERTY_RETAIN_READONLY(zfanyT<ZFArray>, p2_unitList, zfobj<ZFArray>())
     /** @brief see #P2World */
     ZFMETHOD_DECLARE_1(void, p2_unit
             , ZFMP_IN(ZFObject *, unitOrBody)
@@ -1330,7 +1331,7 @@ public:
     ZFMETHOD_DECLARE_0(void, p2_unitRemoveAll)
 
     /** @brief see #P2World, must not manually modify */
-    ZFPROPERTY_RETAIN_READONLY(ZFArray *, p2_jointList, zfobj<ZFArray>())
+    ZFPROPERTY_RETAIN_READONLY(zfanyT<ZFArray>, p2_jointList, zfobj<ZFArray>())
     /**
      * @brief see #P2World
      *

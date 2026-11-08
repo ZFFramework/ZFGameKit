@@ -8,17 +8,17 @@ ZFCLASS_EXTEND(ZFUIView, P2Body)
 zfclassNotPOD _ZFP_P2WorldViewPrivate : zfextend P2WorldImpl {
 public:
     typedef enum {
-        TileUpdateByUI,
-        TileUpdateBySpeed,
-        TileUpdateByOffset,
-    } TileUpdateMode;
+        ScreenTileUpdateByUI,
+        ScreenTileUpdateBySpeed,
+        ScreenTileUpdateByOffset,
+    } ScreenTileUpdateMode;
 public:
     P2World *world;
     P2WorldView *worldView;
     ZFUIView *container;
     zffloat UIScalePrev;
-    TileUpdateMode tileUpdateMode;
-    ZFUIPoint tileUpdateParam; // tileIsUpdateBySpeed's speed, or tileIsUpdateByOffset's offset
+    ScreenTileUpdateMode screenTileUpdateMode;
+    ZFUIPoint screenTileUpdateParam; // screenTileIsUpdateBySpeed's speed, or screenTileIsUpdateByOffset's offset
 
 public:
     _ZFP_P2WorldViewPrivate(void)
@@ -26,8 +26,8 @@ public:
     , worldView(zfnull)
     , container(zfobjAlloc(ZFUIView))
     , UIScalePrev(1)
-    , tileUpdateMode(TileUpdateByUI)
-    , tileUpdateParam()
+    , screenTileUpdateMode(ScreenTileUpdateByUI)
+    , screenTileUpdateParam()
     {
     }
     ~_ZFP_P2WorldViewPrivate(void) {
@@ -71,36 +71,42 @@ public:
             }
         }
 
-        const ZFCoreArray<zfautoT<P2ScreenTileView> > &tilesBg = worldView->tileBg();
-        const ZFCoreArray<zfautoT<P2ScreenTileView> > &tilesFg = worldView->tileBg();
-        if(!tilesBg.isEmpty() || !tilesFg.isEmpty()) {
-            switch(this->tileUpdateMode) {
-                case TileUpdateByUI: {
+        ZFArray *screenTileBg = worldView->screenTileBgList();
+        ZFArray *screenTileFg = worldView->screenTileFgList();
+        if(!screenTileBg->isEmpty() || !screenTileFg->isEmpty()) {
+            switch(this->screenTileUpdateMode) {
+                case ScreenTileUpdateByUI: {
                     ZFUIPoint offset;
                     offset.x = world->p2_UIOffset().x * world->p2_UIScale();
                     offset.y = 0 - world->p2_UIOffset().y * world->p2_UIScale();
-                    for(zfindex i = tilesBg.count() - 1; i != zfindexMax(); --i) {
-                        tilesBg[i]->tileOffset(offset);
+                    for(zfindex i = screenTileBg->count() - 1; i != zfindexMax(); --i) {
+                        P2ScreenTileView *v = screenTileBg->get(i);
+                        v->tileOffset(offset);
                     }
-                    for(zfindex i = tilesFg.count() - 1; i != zfindexMax(); --i) {
-                        tilesFg[i]->tileOffset(offset);
+                    for(zfindex i = screenTileFg->count() - 1; i != zfindexMax(); --i) {
+                        P2ScreenTileView *v = screenTileFg->get(i);
+                        v->tileOffset(offset);
                     }
                     break;
                 }
-                case TileUpdateBySpeed:
-                    for(zfindex i = tilesBg.count() - 1; i != zfindexMax(); --i) {
-                        tilesBg[i]->tileOffsetStep(this->tileUpdateParam.x, this->tileUpdateParam.y);
+                case ScreenTileUpdateBySpeed:
+                    for(zfindex i = screenTileBg->count() - 1; i != zfindexMax(); --i) {
+                        P2ScreenTileView *v = screenTileBg->get(i);
+                        v->tileOffsetStep(this->screenTileUpdateParam.x, this->screenTileUpdateParam.y);
                     }
-                    for(zfindex i = tilesFg.count() - 1; i != zfindexMax(); --i) {
-                        tilesFg[i]->tileOffsetStep(this->tileUpdateParam.x, this->tileUpdateParam.y);
+                    for(zfindex i = screenTileFg->count() - 1; i != zfindexMax(); --i) {
+                        P2ScreenTileView *v = screenTileFg->get(i);
+                        v->tileOffsetStep(this->screenTileUpdateParam.x, this->screenTileUpdateParam.y);
                     }
                     break;
-                case TileUpdateByOffset: {
-                    for(zfindex i = tilesBg.count() - 1; i != zfindexMax(); --i) {
-                        tilesBg[i]->tileOffset(this->tileUpdateParam);
+                case ScreenTileUpdateByOffset: {
+                    for(zfindex i = screenTileBg->count() - 1; i != zfindexMax(); --i) {
+                        P2ScreenTileView *v = screenTileBg->get(i);
+                        v->tileOffset(this->screenTileUpdateParam);
                     }
-                    for(zfindex i = tilesFg.count() - 1; i != zfindexMax(); --i) {
-                        tilesFg[i]->tileOffset(this->tileUpdateParam);
+                    for(zfindex i = screenTileFg->count() - 1; i != zfindexMax(); --i) {
+                        P2ScreenTileView *v = screenTileFg->get(i);
+                        v->tileOffset(this->screenTileUpdateParam);
                     }
                     break;
                 }
@@ -128,81 +134,148 @@ private:
 
 ZFOBJECT_REGISTER(P2WorldView)
 
-ZFPROPERTY_ON_UPDATE_DEFINE(P2WorldView, ZFCoreArray<zfautoT<P2ScreenTileView> >, tileBg) {
-    for(zfindex i = propertyValueOld.count() - 1; i != zfindexMax(); --i) {
-        P2ScreenTileView *child = propertyValueOld[i];
-        if(child) {
-            child->removeFromParent();
+// ============================================================
+ZFMETHOD_DEFINE_1(P2WorldView, void, screenTileBg
+        , ZFMP_IN(P2ScreenTileView *, v)
+        ) {
+    ZFCoreAssert(v && v->parent() == zfnull);
+    this->screenTileBgList()->add(v);
+    this->internalImplView(v, 0);
+}
+ZFMETHOD_DEFINE_0(P2WorldView, zfindex, screenTileBgCount) {
+    return this->screenTileBgList()->count();
+}
+ZFMETHOD_DEFINE_1(P2WorldView, P2ScreenTileView *, screenTileBgAt
+        , ZFMP_IN(zfindex, index)
+        ) {
+    return this->screenTileBgList()->get(index);
+}
+ZFMETHOD_DEFINE_1(P2WorldView, zfautoT<P2ScreenTileView>, screenTileBgRemoveAt
+        , ZFMP_IN(zfindex, index)
+        ) {
+    zfautoT<P2ScreenTileView> ret = this->screenTileBgList()->removeAndGet(index);
+    ret->removeFromParent();
+    return ret;
+}
+ZFMETHOD_DEFINE_0(P2WorldView, void, screenTileBgRemoveAll) {
+    ZFArray *l = this->screenTileBgList();
+    if(!l->isEmpty()) {
+        for(zfindex i = 0; i < l->count(); ++i) {
+            P2ScreenTileView *v = l->get(i);
+            v->removeFromParent();
         }
-    }
-    for(zfindex i = propertyValue.count() - 1; i != zfindexMax(); --i) {
-        P2ScreenTileView *child = propertyValue[i];
-        if(child) {
-            this->internalImplView(child, 0);
-        }
+        l->removeAll();
     }
 }
-ZFPROPERTY_ON_UPDATE_DEFINE(P2WorldView, ZFCoreArray<zfautoT<P2ScreenTileView> >, tileFg) {
-    for(zfindex i = propertyValueOld.count() - 1; i != zfindexMax(); --i) {
-        P2ScreenTileView *child = propertyValueOld[i];
-        if(child) {
-            child->removeFromParent();
+
+ZFMETHOD_DEFINE_1(P2WorldView, void, screenTileFg
+        , ZFMP_IN(P2ScreenTileView *, v)
+        ) {
+    ZFCoreAssert(v && v->parent() == zfnull);
+    this->screenTileFgList()->add(v);
+    this->internalImplView(v);
+}
+ZFMETHOD_DEFINE_0(P2WorldView, zfindex, screenTileFgCount) {
+    return this->screenTileFgList()->count();
+}
+ZFMETHOD_DEFINE_1(P2WorldView, P2ScreenTileView *, screenTileFgAt
+        , ZFMP_IN(zfindex, index)
+        ) {
+    return this->screenTileFgList()->get(index);
+}
+ZFMETHOD_DEFINE_1(P2WorldView, zfautoT<P2ScreenTileView>, screenTileFgRemoveAt
+        , ZFMP_IN(zfindex, index)
+        ) {
+    zfautoT<P2ScreenTileView> ret = this->screenTileFgList()->removeAndGet(index);
+    ret->removeFromParent();
+    return ret;
+}
+ZFMETHOD_DEFINE_0(P2WorldView, void, screenTileFgRemoveAll) {
+    ZFArray *l = this->screenTileFgList();
+    if(!l->isEmpty()) {
+        for(zfindex i = 0; i < l->count(); ++i) {
+            P2ScreenTileView *v = l->get(i);
+            v->removeFromParent();
         }
-    }
-    for(zfindex i = 0; i < propertyValue.count(); ++i) {
-        P2ScreenTileView *child = propertyValue[i];
-        if(child) {
-            this->internalImplView(child);
-        }
+        l->removeAll();
     }
 }
 
-ZFMETHOD_DEFINE_0(P2WorldView, void, tileUpdateByUI) {
-    d->tileUpdateMode = _ZFP_P2WorldViewPrivate::TileUpdateByUI;
+// ============================================================
+ZFMETHOD_DEFINE_0(P2WorldView, void, screenTileUpdateByUI) {
+    d->screenTileUpdateMode = _ZFP_P2WorldViewPrivate::ScreenTileUpdateByUI;
 }
-ZFMETHOD_DEFINE_0(P2WorldView, zfbool, tileIsUpdateByUI) {
-    return d->tileUpdateMode == _ZFP_P2WorldViewPrivate::TileUpdateByUI;
+ZFMETHOD_DEFINE_0(P2WorldView, zfbool, screenTileIsUpdateByUI) {
+    return d->screenTileUpdateMode == _ZFP_P2WorldViewPrivate::ScreenTileUpdateByUI;
 }
 
-ZFMETHOD_DEFINE_1(P2WorldView, void, tileSpeed
+ZFMETHOD_DEFINE_1(P2WorldView, void, screenTileSpeed
         , ZFMP_IN(const ZFUIPoint &, v)
         ) {
-    d->tileUpdateMode = _ZFP_P2WorldViewPrivate::TileUpdateBySpeed;
-    d->tileUpdateParam = v;
+    d->screenTileUpdateMode = _ZFP_P2WorldViewPrivate::ScreenTileUpdateBySpeed;
+    d->screenTileUpdateParam = v;
 }
-ZFMETHOD_DEFINE_0(P2WorldView, ZFUIPoint, tileSpeed) {
-    if(d->tileUpdateMode == _ZFP_P2WorldViewPrivate::TileUpdateBySpeed) {
-        return d->tileUpdateParam;
+ZFMETHOD_DEFINE_0(P2WorldView, ZFUIPoint, screenTileSpeed) {
+    if(d->screenTileUpdateMode == _ZFP_P2WorldViewPrivate::ScreenTileUpdateBySpeed) {
+        return d->screenTileUpdateParam;
     }
     else {
         return ZFUIPointZero();
     }
 }
-ZFMETHOD_DEFINE_0(P2WorldView, zfbool, tileIsUpdateBySpeed) {
-    return d->tileUpdateMode == _ZFP_P2WorldViewPrivate::TileUpdateBySpeed;
+ZFMETHOD_DEFINE_0(P2WorldView, zfbool, screenTileIsUpdateBySpeed) {
+    return d->screenTileUpdateMode == _ZFP_P2WorldViewPrivate::ScreenTileUpdateBySpeed;
 }
 
-ZFMETHOD_DEFINE_1(P2WorldView, void, tileOffset
+ZFMETHOD_DEFINE_1(P2WorldView, void, screenTileOffset
         , ZFMP_IN(const ZFUIPoint &, v)
         ) {
-    d->tileUpdateMode = _ZFP_P2WorldViewPrivate::TileUpdateByOffset;
-    d->tileUpdateParam = v;
+    d->screenTileUpdateMode = _ZFP_P2WorldViewPrivate::ScreenTileUpdateByOffset;
+    d->screenTileUpdateParam = v;
 }
-ZFMETHOD_DEFINE_0(P2WorldView, ZFUIPoint, tileOffset) {
-    if(d->tileUpdateMode == _ZFP_P2WorldViewPrivate::TileUpdateByOffset) {
-        return d->tileUpdateParam;
+ZFMETHOD_DEFINE_0(P2WorldView, ZFUIPoint, screenTileOffset) {
+    if(d->screenTileUpdateMode == _ZFP_P2WorldViewPrivate::ScreenTileUpdateByOffset) {
+        return d->screenTileUpdateParam;
     }
     else {
         return ZFUIPointZero();
     }
 }
-ZFMETHOD_DEFINE_0(P2WorldView, zfbool, tileIsUpdateByOffset) {
-    return d->tileUpdateMode == _ZFP_P2WorldViewPrivate::TileUpdateByOffset;
+ZFMETHOD_DEFINE_0(P2WorldView, zfbool, screenTileIsUpdateByOffset) {
+    return d->screenTileUpdateMode == _ZFP_P2WorldViewPrivate::ScreenTileUpdateByOffset;
 }
 
 void P2WorldView::objectOnInit(void) {
     zfsuper::objectOnInit();
     d = zfpoolNew(_ZFP_P2WorldViewPrivate);
+
+    zfclassNotPOD _Impl {
+    public:
+        static void prev(ZF_IN const ZFArgs &zfargs) {
+            P2WorldView *owner = zfargs.sender();
+            owner->screenTileBgRemoveAll();
+            owner->screenTileFgRemoveAll();
+        }
+        static void post(ZF_IN const ZFArgs &zfargs) {
+            P2WorldView *owner = zfargs.sender();
+            {
+                ZFArray *list = owner->screenTileBgList();
+                for(zfindex i = 0, count = list->count(); i < count; ++i) {
+                    P2ScreenTileView *v = list->get(i);
+                    owner->internalImplView(v, 0);
+                }
+            }
+            {
+                ZFArray *list = owner->screenTileFgList();
+                for(zfindex i = 0, count = list->count(); i < count; ++i) {
+                    P2ScreenTileView *v = list->get(i);
+                    owner->internalImplView(v);
+                }
+            }
+        }
+    };
+    this->observerAdd(ZFSerializable::E_SerializeFromPrev(), ZFCallbackForFunc(_Impl::prev));
+    this->observerAdd(ZFSerializable::E_SerializeFromPost(), ZFCallbackForFunc(_Impl::post));
 }
 void P2WorldView::objectOnDealloc(void) {
     zfpoolDelete(d);

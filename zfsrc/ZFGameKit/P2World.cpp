@@ -100,11 +100,15 @@ ZFEXPORT_VAR_READONLY_DEFINE(zfflags, P2FilterCategoryDefault, P2FilterCategoryD
 ZFEXPORT_VAR_READONLY_DEFINE(zfflags, P2FilterMaskDefault, P2FilterMaskDefault())
 
 // ============================================================
+static void _ZFP_P2ShapeAttach(ZF_IN P2Body *owner, ZF_IN P2Shape *shape);
+static void _ZFP_P2ShapeDetach(ZF_IN P2Body *owner, ZF_IN P2Shape *shape);
 static void _ZFP_P2JointAttach(ZF_IN ZFObject *jointOwner, ZF_IN P2Joint *joint);
 static void _ZFP_P2JointDetach(ZF_IN P2Joint *joint);
-static void _ZFP_P2BodyAttach(ZF_IN P2Unit *ownerUnit, ZF_IN P2Body *body);
+static void _ZFP_P2BodyAttach(ZF_IN P2Unit *owner, ZF_IN P2Body *body);
 static void _ZFP_P2BodyDetach(ZF_IN P2Body *body, ZF_IN_OPT zfbool pendingBodyUpdate = zftrue);
-static void _ZFP_P2UnitAttach(ZF_IN P2World *ownerWorld, ZF_IN P2Unit *unit);
+static void _ZFP_P2ExtAttach(ZF_IN P2Unit *owner, ZF_IN P2Ext *ext);
+static void _ZFP_P2ExtDetach(ZF_IN P2Ext *ext);
+static void _ZFP_P2UnitAttach(ZF_IN P2World *owner, ZF_IN P2Unit *unit);
 static void _ZFP_P2UnitDetach(ZF_IN P2Unit *unit);
 
 static void _ZFP_P2BodyImplMassUpdateRequest(ZF_IN P2Body *body);
@@ -217,6 +221,25 @@ public:
             b2Body_SetLinearVelocity(this->implBodyId, t);
             ZFBitUnset(stateFlag, stateFlag_massUpdateRequested);
         }
+    }
+};
+
+zfclassNotPOD _ZFP_P2ExtPrivate {
+public:
+    static void attach(ZF_IN P2Unit *owner, ZF_IN P2Ext *ext) {
+        ext->_ZFP_ownerUnit = owner;
+        ext->p2_extOnAttach(owner);
+        ext->observerNotify(P2Ext::E_P2ExtOnAttach(), ZFArgs()
+                .param0(owner)
+                );
+    }
+    static void detach(ZF_IN P2Ext *ext) {
+        P2Unit *owner = ext->_ZFP_ownerUnit;
+        ext->_ZFP_ownerUnit = zfnull;
+        ext->observerNotify(P2Ext::E_P2ExtOnDetach(), ZFArgs()
+                .param0(owner)
+                );
+        ext->p2_extOnDetach(owner);
     }
 };
 
@@ -1796,11 +1819,7 @@ ZFMETHOD_DEFINE_1(P2Body, void, p2_shape
         ) {
     ZFCoreAssert(shape != zfnull && shape->p2_ownerBody() == zfnull);
     this->p2_shapeList()->add(shape);
-    ZFBitSet(_ZFP_P2Body_d->stateFlag, _ZFP_P2BodyPrivate::stateFlag_bodyPosUpdateRequested);
-    if(B2_IS_NON_NULL(_ZFP_P2Body_d->implBodyId)) {
-        _ZFP_P2ShapePrivate::shapeCreate(this, shape, this->p2_ownerUnit()->p2_unitScale());
-        _ZFP_P2BodyImplMassUpdateRequest(this);
-    }
+    _ZFP_P2ShapeAttach(this, shape);
 }
 ZFMETHOD_DEFINE_0(P2Body, zfindex, p2_shapeCount) {
     return this->p2_shapeList()->count();
@@ -1810,19 +1829,11 @@ ZFMETHOD_DEFINE_1(P2Body, P2Shape *, p2_shapeAt
         ) {
     return this->p2_shapeList()->get(index);
 }
-static void _ZFP_P2Body_shapeDetach(ZF_IN P2Body *owner, ZF_IN P2Shape *item) {
-    if(B2_IS_NON_NULL(item->_ZFP_P2Shape_d->implShapeId)) {
-        b2DestroyShape(item->_ZFP_P2Shape_d->implShapeId, zffalse);
-        item->_ZFP_P2Shape_d->implShapeId = b2_nullShapeId;
-        _ZFP_P2BodyImplMassUpdateRequest(owner);
-    }
-}
 ZFMETHOD_DEFINE_1(P2Body, zfautoT<P2Shape>, p2_shapeRemoveAt
         , ZFMP_IN(zfindex, index)
         ) {
     zfautoT<P2Shape> item = this->p2_shapeList()->removeAndGet(index);
-    ZFBitSet(_ZFP_P2Body_d->stateFlag, _ZFP_P2BodyPrivate::stateFlag_bodyPosUpdateRequested);
-    _ZFP_P2Body_shapeDetach(this, item);
+    _ZFP_P2ShapeDetach(this, item);
     return item;
 }
 ZFMETHOD_DEFINE_1(P2Body, zfautoT<P2Shape>, p2_shapeRemove
@@ -1833,17 +1844,15 @@ ZFMETHOD_DEFINE_1(P2Body, zfautoT<P2Shape>, p2_shapeRemove
         return zfnull;
     }
     zfautoT<P2Shape> item = this->p2_shapeList()->removeAndGet(index);
-    ZFBitSet(_ZFP_P2Body_d->stateFlag, _ZFP_P2BodyPrivate::stateFlag_bodyPosUpdateRequested);
-    _ZFP_P2Body_shapeDetach(this, item);
+    _ZFP_P2ShapeDetach(this, item);
     return item;
 }
 ZFMETHOD_DEFINE_0(P2Body, void, p2_shapeRemoveAll) {
     ZFArray *l = this->p2_shapeList();
     if(!l->isEmpty()) {
-        ZFBitSet(_ZFP_P2Body_d->stateFlag, _ZFP_P2BodyPrivate::stateFlag_bodyPosUpdateRequested);
         for(zfindex i = 0; i < l->count(); ++i) {
             P2Shape *item = l->get(i);
-            _ZFP_P2Body_shapeDetach(this, item);
+            _ZFP_P2ShapeDetach(this, item);
         }
         l->removeAll();
     }
@@ -2140,6 +2149,23 @@ ZFMETHOD_DEFINE_0(P2Body, zfbool, p2_implAttached) {
 void P2Body::objectOnInit(void) {
     zfsuper::objectOnInit();
     _ZFP_P2Body_d = zfpoolNew(_ZFP_P2BodyPrivate);
+
+    zfclassNotPOD _Impl {
+    public:
+        static void prev(ZF_IN const ZFArgs &zfargs) {
+            P2Body *owner = zfargs.sender();
+            owner->p2_shapeRemoveAll();
+        }
+        static void post(ZF_IN const ZFArgs &zfargs) {
+            P2Body *owner = zfargs.sender();
+            ZFArray *list = owner->p2_shapeList();
+            for(zfindex i = 0, count = list->count(); i < count; ++i) {
+                _ZFP_P2ShapeAttach(owner, list->get(i));
+            }
+        }
+    };
+    this->observerAdd(ZFSerializable::E_SerializeFromPrev(), ZFCallbackForFunc(_Impl::prev));
+    this->observerAdd(ZFSerializable::E_SerializeFromPost(), ZFCallbackForFunc(_Impl::post));
 }
 void P2Body::objectOnDealloc(void) {
     ZFCoreAssert(B2_IS_NULL(_ZFP_P2Body_d->implBodyId));
@@ -2251,17 +2277,20 @@ ZFMETHOD_DEFINE_1(P2Unit, zfautoT<P2Body>, p2_partRemove
     return item;
 }
 ZFMETHOD_DEFINE_0(P2Unit, void, p2_partRemoveAll) {
-    ZFArray *partList = this->p2_partList();
-    for(zfindex i = partList->count() - 1; i != zfindexMax(); --i) {
-        P2Body *item = partList->get(i);
-        _ZFP_P2BodyDetach(item);
+    ZFArray *l = this->p2_partList();
+    if(!l->isEmpty()) {
+        for(zfindex i = 0; i < l->count(); ++i) {
+            P2Body *item = l->get(i);
+            _ZFP_P2BodyDetach(item);
+        }
+        l->removeAll();
     }
-    this->p2_partList()->removeAll();
 }
 
 ZFMETHOD_DEFINE_1(P2Unit, void, p2_joint
         , ZFMP_IN(P2Joint *, v)
         ) {
+    ZFCoreAssert(v && v->p2_owner() == zfnull);
     this->p2_jointList()->add(v);
     _ZFP_P2JointAttach(this, v);
 }
@@ -2293,12 +2322,14 @@ ZFMETHOD_DEFINE_1(P2Unit, zfautoT<P2Joint>, p2_jointRemove
 }
 ZFMETHOD_DEFINE_0(P2Unit, void, p2_jointRemoveAll
         ) {
-    ZFArray *jointList = this->p2_jointList();
-    for(zfindex i = jointList->count() - 1; i != zfindexMax(); --i) {
-        P2Joint *item = jointList->get(i);
-        _ZFP_P2JointDetach(item);
+    ZFArray *l = this->p2_jointList();
+    if(!l->isEmpty()) {
+        for(zfindex i = 0; i < l->count(); ++i) {
+            P2Joint *item = l->get(i);
+            _ZFP_P2JointDetach(item);
+        }
+        l->removeAll();
     }
-    jointList->removeAll();
 }
 
 ZFMETHOD_DEFINE_1(P2Unit, P2Body *, p2_bodyFind
@@ -2365,11 +2396,7 @@ ZFMETHOD_DEFINE_1(P2Unit, void, p2_ext
         ) {
     ZFCoreAssert(v && v->p2_ownerUnit() == zfnull);
     this->p2_extList()->add(v);
-    v->_ZFP_ownerUnit = this;
-    v->p2_extOnAttach(this);
-    v->observerNotify(P2Ext::E_P2ExtOnAttach(), ZFArgs()
-            .param0(this)
-            );
+    _ZFP_P2ExtAttach(this, v);
 }
 ZFMETHOD_DEFINE_0(P2Unit, zfindex, p2_extCount) {
     return this->p2_extList()->count();
@@ -2384,35 +2411,28 @@ ZFMETHOD_DEFINE_1(P2Unit, zfautoT<P2Ext>, p2_extRemoveAt
         ) {
     zfautoT<P2Ext> v = this->p2_extList()->get(index);
     this->p2_extList()->remove(index);
-    v->observerNotify(P2Ext::E_P2ExtOnDetach(), ZFArgs()
-            .param0(this)
-            );
-    v->p2_extOnDetach(this);
+    _ZFP_P2ExtDetach(v);
     return v;
 }
 ZFMETHOD_DEFINE_1(P2Unit, zfautoT<P2Ext>, p2_extRemove
         , ZFMP_IN(P2Ext *, v)
         ) {
     zfindex index = this->p2_extList()->find(v);
-    if(index != zfindexMax()) {
-        return this->p2_extRemoveAt(index);
-    }
-    else {
+    if(index == zfindexMax()) {
         return zfnull;
     }
+    zfautoT<P2Ext> item = this->p2_extList()->removeAndGet(index);
+    _ZFP_P2ExtDetach(item);
+    return item;
 }
 ZFMETHOD_DEFINE_0(P2Unit, void, p2_extRemoveAll) {
-    if(!this->p2_extList()->isEmpty()) {
-        zfobj<ZFArray> tmp;
-        tmp->addFrom(this->p2_extList());
-        this->p2_extList()->removeAll();
-        for(zfindex i = 0; i < tmp->count(); ++i) {
-            P2Ext *v = tmp->get(i);
-            v->observerNotify(P2Ext::E_P2ExtOnDetach(), ZFArgs()
-                    .param0(this)
-                    );
-            v->p2_extOnDetach(this);
+    ZFArray *l = this->p2_extList();
+    if(!l->isEmpty()) {
+        for(zfindex i = 0; i < l->count(); ++i) {
+            P2Ext *item = l->get(i);
+            _ZFP_P2ExtDetach(item);
         }
+        l->removeAll();
     }
 }
 ZFMETHOD_DEFINE_1(P2Unit, zfindex, p2_extFind
@@ -2443,10 +2463,7 @@ ZFMETHOD_DEFINE_1(P2Unit, P2Ext *, p2_extAccess
     zfautoT<P2Ext> v = extCls->newInstance();
     ZFCoreAssert(v);
     this->p2_extList()->add(v);
-    v->p2_extOnAttach(this);
-    v->observerNotify(P2Ext::E_P2ExtOnAttach(), ZFArgs()
-            .param0(this)
-            );
+    _ZFP_P2ExtAttach(this, v);
     return v;
 }
 
@@ -2461,6 +2478,39 @@ ZFMETHOD_DEFINE_0(P2Unit, zfbool, p2_unitVisible) {
 void P2Unit::objectOnInit(void) {
     zfsuper::objectOnInit();
     _ZFP_P2Unit_d = zfpoolNew(_ZFP_P2UnitPrivate);
+
+    zfclassNotPOD _Impl {
+    public:
+        static void prev(ZF_IN const ZFArgs &zfargs) {
+            P2Unit *owner = zfargs.sender();
+            owner->p2_partRemoveAll();
+            owner->p2_jointRemoveAll();
+            owner->p2_extRemoveAll();
+        }
+        static void post(ZF_IN const ZFArgs &zfargs) {
+            P2Unit *owner = zfargs.sender();
+            {
+                ZFArray *list = owner->p2_partList();
+                for(zfindex i = 0, count = list->count(); i < count; ++i) {
+                    _ZFP_P2BodyAttach(owner, list->get(i));
+                }
+            }
+            {
+                ZFArray *list = owner->p2_jointList();
+                for(zfindex i = 0, count = list->count(); i < count; ++i) {
+                    _ZFP_P2JointAttach(owner, list->get(i));
+                }
+            }
+            {
+                ZFArray *list = owner->p2_extList();
+                for(zfindex i = 0, count = list->count(); i < count; ++i) {
+                    _ZFP_P2ExtAttach(owner, list->get(i));
+                }
+            }
+        }
+    };
+    this->observerAdd(ZFSerializable::E_SerializeFromPrev(), ZFCallbackForFunc(_Impl::prev));
+    this->observerAdd(ZFSerializable::E_SerializeFromPost(), ZFCallbackForFunc(_Impl::post));
 }
 void P2Unit::objectOnDealloc(void) {
     ZFCoreAssert(_ZFP_P2Unit_d->ownerWorld == zfnull);
@@ -2665,17 +2715,20 @@ ZFMETHOD_DEFINE_1(P2World, zfautoT<P2Unit>, p2_unitRemove
     return item;
 }
 ZFMETHOD_DEFINE_0(P2World, void, p2_unitRemoveAll) {
-    ZFArray *unitList = this->p2_jointList();
-    for(zfindex i = unitList->count() - 1; i != zfindexMax(); --i) {
-        P2Unit *item = unitList->get(i);
-        _ZFP_P2UnitDetach(item);
+    ZFArray *l = this->p2_jointList();
+    if(!l->isEmpty()) {
+        for(zfindex i = 0; i < l->count(); ++i) {
+            P2Unit *item = l->get(i);
+            _ZFP_P2UnitDetach(item);
+        }
+        l->removeAll();
     }
-    unitList->removeAll();
 }
 
 ZFMETHOD_DEFINE_1(P2World, void, p2_joint
         , ZFMP_IN(P2Joint *, v)
         ) {
+    ZFCoreAssert(v && v->p2_owner() == zfnull);
     this->p2_jointList()->add(v);
     _ZFP_P2JointAttach(this, v);
 }
@@ -2707,12 +2760,14 @@ ZFMETHOD_DEFINE_1(P2World, zfautoT<P2Joint>, p2_jointRemove
 }
 ZFMETHOD_DEFINE_0(P2World, void, p2_jointRemoveAll
         ) {
-    ZFArray *jointList = this->p2_jointList();
-    for(zfindex i = jointList->count() - 1; i != zfindexMax(); --i) {
-        P2Joint *item = jointList->get(i);
-        _ZFP_P2JointDetach(item);
+    ZFArray *l = this->p2_jointList();
+    if(!l->isEmpty()) {
+        for(zfindex i = 0; i < l->count(); ++i) {
+            P2Joint *item = l->get(i);
+            _ZFP_P2JointDetach(item);
+        }
+        l->removeAll();
     }
-    jointList->removeAll();
 }
 
 ZFMETHOD_DEFINE_1(P2World, P2Unit *, p2_unitFind
@@ -2895,14 +2950,23 @@ void P2World::objectOnInit(void) {
     zfclassNotPOD _Impl {
     public:
         static void prev(ZF_IN const ZFArgs &zfargs) {
-            P2World *world = zfargs.sender();
-            world->p2_unitRemoveAll();
+            P2World *owner = zfargs.sender();
+            owner->p2_unitRemoveAll();
+            owner->p2_jointRemoveAll();
         }
         static void post(ZF_IN const ZFArgs &zfargs) {
-            P2World *world = zfargs.sender();
-            ZFArray *unitList = world->p2_unitList();
-            for(zfindex i = unitList->count() - 1; i != zfindexMax(); --i) {
-                _ZFP_P2UnitAttach(world, unitList->get(i));
+            P2World *owner = zfargs.sender();
+            {
+                ZFArray *list = owner->p2_unitList();
+                for(zfindex i = 0, count = list->count(); i < count; ++i) {
+                    _ZFP_P2UnitAttach(owner, list->get(i));
+                }
+            }
+            {
+                ZFArray *list = owner->p2_unitList();
+                for(zfindex i = 0, count = list->count(); i < count; ++i) {
+                    _ZFP_P2JointAttach(owner, list->get(i));
+                }
             }
         }
     };
@@ -3025,6 +3089,21 @@ ZFMETHOD_FUNC_DEFINE_3(ZFUIPoint, P2LocalToWorld
 }
 
 // ============================================================
+static void _ZFP_P2ShapeAttach(ZF_IN P2Body *owner, ZF_IN P2Shape *shape) {
+    ZFBitSet(owner->_ZFP_P2Body_d->stateFlag, _ZFP_P2BodyPrivate::stateFlag_bodyPosUpdateRequested);
+    if(B2_IS_NON_NULL(owner->_ZFP_P2Body_d->implBodyId)) {
+        _ZFP_P2ShapePrivate::shapeCreate(owner, shape, owner->p2_ownerUnit()->p2_unitScale());
+        _ZFP_P2BodyImplMassUpdateRequest(owner);
+    }
+}
+static void _ZFP_P2ShapeDetach(ZF_IN P2Body *owner, ZF_IN P2Shape *shape) {
+    ZFBitSet(owner->_ZFP_P2Body_d->stateFlag, _ZFP_P2BodyPrivate::stateFlag_bodyPosUpdateRequested);
+    if(B2_IS_NON_NULL(shape->_ZFP_P2Shape_d->implShapeId)) {
+        b2DestroyShape(shape->_ZFP_P2Shape_d->implShapeId, zffalse);
+        shape->_ZFP_P2Shape_d->implShapeId = b2_nullShapeId;
+        _ZFP_P2BodyImplMassUpdateRequest(owner);
+    }
+}
 static void _ZFP_P2JointAttach(ZF_IN ZFObject *jointOwner, ZF_IN P2Joint *joint) {
     ZFCoreAssertWithMessageTrim(joint->_ZFP_P2Joint_d->jointOwner == zfnull
             , "joint already attached to owner, joint: %s, owner: %s"
@@ -3058,15 +3137,15 @@ static void _ZFP_P2JointDetach(ZF_IN P2Joint *joint) {
     }
     joint->_ZFP_P2Joint_d->jointOwner = zfnull;
 }
-static void _ZFP_P2BodyAttach(ZF_IN P2Unit *ownerUnit, ZF_IN P2Body *body) {
+static void _ZFP_P2BodyAttach(ZF_IN P2Unit *owner, ZF_IN P2Body *body) {
     ZFCoreAssertWithMessageTrim(body->_ZFP_P2Body_d->ownerUnit == zfnull
             , "body already attached to unit, body: %s, unit: %s"
             , body
-            , ownerUnit
+            , owner
             );
-    body->_ZFP_P2Body_d->ownerUnit = ownerUnit;
-    if(ownerUnit->_ZFP_P2Unit_d->ownerWorld) {
-        ownerUnit->_ZFP_P2Unit_d->ownerWorld->_ZFP_P2World_d->pendingBody[body];
+    body->_ZFP_P2Body_d->ownerUnit = owner;
+    if(owner->_ZFP_P2Unit_d->ownerWorld) {
+        owner->_ZFP_P2Unit_d->ownerWorld->_ZFP_P2World_d->pendingBody[body];
     }
 }
 static void _ZFP_P2BodyDetach(ZF_IN P2Body *body, ZF_IN_OPT zfbool pendingBodyUpdate /* = zftrue */) {
@@ -3125,31 +3204,37 @@ static void _ZFP_P2BodyDetach(ZF_IN P2Body *body, ZF_IN_OPT zfbool pendingBodyUp
     }
     body->_ZFP_P2Body_d->ownerUnit = zfnull;
 }
-static void _ZFP_P2UnitAttach(ZF_IN P2World *ownerWorld, ZF_IN P2Unit *unit) {
+static void _ZFP_P2ExtAttach(ZF_IN P2Unit *owner, ZF_IN P2Ext *ext) {
+    _ZFP_P2ExtPrivate::attach(owner, ext);
+}
+static void _ZFP_P2ExtDetach(ZF_IN P2Ext *ext) {
+    _ZFP_P2ExtPrivate::detach(ext);
+}
+static void _ZFP_P2UnitAttach(ZF_IN P2World *owner, ZF_IN P2Unit *unit) {
     ZFCoreAssertWithMessageTrim(unit->_ZFP_P2Unit_d->ownerWorld == zfnull
             , "unit already attached to world, unit: %s, world: %s"
             , unit
             , unit->_ZFP_P2Unit_d->ownerWorld
             );
-    unit->_ZFP_P2Unit_d->ownerWorld = ownerWorld;
-    ownerWorld->_ZFP_P2World_d->pendingBody[unit->p2_body()];
+    unit->_ZFP_P2Unit_d->ownerWorld = owner;
+    owner->_ZFP_P2World_d->pendingBody[unit->p2_body()];
     ZFArray *partList = unit->p2_partList();
     for(zfindex i = partList->count() - 1; i != zfindexMax(); --i) {
-        ownerWorld->_ZFP_P2World_d->pendingBody[partList->get(i)];
+        owner->_ZFP_P2World_d->pendingBody[partList->get(i)];
     }
     ZFArray *jointList = unit->p2_jointList();
     for(zfindex i = jointList->count() - 1; i != zfindexMax(); --i) {
-        ownerWorld->_ZFP_P2World_d->pendingJoint[jointList->get(i)];
+        owner->_ZFP_P2World_d->pendingJoint[jointList->get(i)];
     }
 
     if(ZFBitTest(unit->_ZFP_P2Unit_d->stateFlag, _ZFP_P2UnitPrivate::stateFlag_E_P2Update)) {
-        ownerWorld->_ZFP_P2World_d->customUpdateUnits[unit] = zftrue;
+        owner->_ZFP_P2World_d->customUpdateUnits[unit] = zftrue;
     }
 
-    if(ZFBitTest(ownerWorld->_ZFP_P2World_d->stateFlag, _ZFP_P2WorldPrivate::stateFlag_E_P2UnitAttach)
+    if(ZFBitTest(owner->_ZFP_P2World_d->stateFlag, _ZFP_P2WorldPrivate::stateFlag_E_P2UnitAttach)
             || ZFBitTest(_ZFP_P2World_stateFlag, _ZFP_P2WorldPrivate::stateFlag_E_P2UnitAttach)
             ) {
-        ownerWorld->observerNotify(P2World::E_P2UnitAttach(), ZFArgs()
+        owner->observerNotify(P2World::E_P2UnitAttach(), ZFArgs()
                 .param0(unit)
                 );
     }
