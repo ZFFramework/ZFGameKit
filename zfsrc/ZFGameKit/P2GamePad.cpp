@@ -64,12 +64,30 @@ public:
             return;
         }
         if(remapKeyMap().isEmpty()) {
-            ZFGlobalObserver().observerRemove(ZFUIView::E_ViewOnEvent(), _attached);
+            ZFGlobalObserver().observerRemove(ZFUIView::E_ViewOnKeyEvent(), _attached);
             _attached = zfnull;
         }
         else {
             _attached = ZFCallbackForFunc(_viewOnEvent);
-            ZFGlobalObserver().observerAdd(ZFUIView::E_ViewOnEvent(), _attached, ZFLevelZFFrameworkNormal);
+            ZFGlobalObserver().observerAdd(ZFUIView::E_ViewOnKeyEvent(), _attached, ZFLevelZFFrameworkNormal);
+        }
+    }
+    static void notifyButtonValue(
+            ZF_IN zfindex padIndex
+            , ZF_IN P2GamePadButton btn
+            , ZF_IN zffloat value
+    ) {
+        _ZFP_P2GamePad::Pad &pad = pads()[padIndex];
+        if(value != 0) {
+            _ZFP_P2GamePad::changeState(padIndex, zftrue);
+        }
+        zffloat &valueRef = pad.valueMap.access(btn);
+        if(valueRef != value) {
+            valueRef = value;
+            pad.ob.observerNotify(ZFGlobalEvent::E_P2GamePadButtonUpdate(), ZFArgs()
+                    .param0(zfobj<v_P2GamePadButton>(btn))
+                    .param1(zfobj<v_zffloat>(value))
+                    );
         }
     }
 private:
@@ -78,15 +96,27 @@ private:
         if(!event) {
             return;
         }
+        zffloat v = 0;
         switch(event->keyAction) {
             case v_ZFUIKeyAction::e_Down:
             case v_ZFUIKeyAction::e_Repeat:
+                v = 1;
                 break;
             case v_ZFUIKeyAction::e_Up:
             case v_ZFUIKeyAction::e_Cancel:
                 break;
             default:
                 return;
+        }
+        ZFCoreMap<ZFUIKeyCode, ZFCoreMap<zfindex, P2GamePadButton> > &m = remapKeyMap();
+        zfiter it = m.iterFind(event->keyCode);
+        if(it) {
+            const ZFCoreMap<zfindex, P2GamePadButton> &t = m.iterValue(it);
+            for(zfiter it2 = t.iter(); it2; ++it2) {
+                zfindex padIndex = t.iterKey(it2);
+                P2GamePadButton btn = t.iterValue(it2);
+                notifyButtonValue(padIndex, btn, v);
+            }
         }
     }
 };
@@ -326,24 +356,11 @@ ZFMETHOD_FUNC_DEFINE_3(void, P2GamePadImpl_notifyButtonValue
         , ZFMP_IN(zffloat, value)
         ) {
     _ZFP_P2GamePad::Pad &pad = _ZFP_P2GamePad::pads()[padIndex];
-    {
-        zfiter it = pad.remapMap.iterFind(btn);
-        if(it) {
-            btn = pad.remapMap.iterValue(it);
-        }
+    zfiter it = pad.remapMap.iterFind(btn);
+    if(it) {
+        btn = pad.remapMap.iterValue(it);
     }
-
-    if(value != 0) {
-        _ZFP_P2GamePad::changeState(padIndex, zftrue);
-    }
-    zffloat &valueRef = pad.valueMap.access(btn);
-    if(valueRef != value) {
-        valueRef = value;
-        pad.ob.observerNotify(ZFGlobalEvent::E_P2GamePadButtonUpdate(), ZFArgs()
-                .param0(zfobj<v_P2GamePadButton>(btn))
-                .param1(zfobj<v_zffloat>(value))
-                );
-    }
+    _ZFP_P2GamePad::notifyButtonValue(padIndex, btn, value);
 }
 ZFMETHOD_FUNC_DEFINE_2(void, P2GamePadImpl_notifyPadChange
         , ZFMP_IN(zfindex, padIndex)

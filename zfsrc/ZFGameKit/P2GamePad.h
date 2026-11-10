@@ -81,6 +81,10 @@ ZF_NAMESPACE_BEGIN(ZFGlobalEvent)
 ZFEVENT_GLOBAL(ZFLIB_ZFGameKit, P2GamePadChange)
 /**
  * @brief called when any button value changed, see #P2GamePadObserver
+ *
+ * param0 would be a #v_P2GamePadButton holds button
+ * whose #P2GamePadPressed or #P2GamePadValue changed,
+ * param1 would be a #v_zfbool holds #P2GamePadPressed
  */
 ZFEVENT_GLOBAL(ZFLIB_ZFGameKit, P2GamePadButtonUpdate)
 ZF_NAMESPACE_END(ZFGlobalEvent)
@@ -93,10 +97,7 @@ ZFMETHOD_FUNC_DECLARE_0(ZFLIB_ZFGameKit, zfindex, P2GamePadMax)
 /**
  * @brief return an observer for specified padIndex
  *
- * attach observer with #ZFGlobalEvent::E_P2GamePadButtonUpdate,
- * callback's param0 would be a #v_P2GamePadButton holds button
- * whose #P2GamePadPressed or #P2GamePadValue changed,
- * param1 would be a #v_zfbool holds #P2GamePadPressed
+ * attach observer with #ZFGlobalEvent::E_P2GamePadButtonUpdate
  *
  * it's ensured safe to attach or detach observers
  * even if game pad not connected,
@@ -148,6 +149,30 @@ ZFMETHOD_FUNC_DECLARE_3(ZFLIB_ZFGameKit, void, P2GamePadRemap
         )
 /**
  * @brief remap game pad, set `to` to #ZFEnumInvalid to remove remap
+ *
+ * typical example:
+ * @code
+ *   P2GamePadRemap(ZFUIKeyCode.e_kA(), P2GamePadButton.e_DPadL())
+ *   P2GamePadRemap(ZFUIKeyCode.e_kW(), P2GamePadButton.e_DPadT())
+ *   P2GamePadRemap(ZFUIKeyCode.e_kD(), P2GamePadButton.e_DPadR())
+ *   P2GamePadRemap(ZFUIKeyCode.e_kS(), P2GamePadButton.e_DPadB())
+ *   P2GamePadRemap(ZFUIKeyCode.e_kJ(), P2GamePadButton.e_BtnL())
+ *   P2GamePadRemap(ZFUIKeyCode.e_kU(), P2GamePadButton.e_BtnT())
+ *   P2GamePadRemap(ZFUIKeyCode.e_kI(), P2GamePadButton.e_BtnR())
+ *   P2GamePadRemap(ZFUIKeyCode.e_kK(), P2GamePadButton.e_BtnB())
+ *   P2GamePadRemap(ZFUIKeyCode.e_kSpace(), P2GamePadButton.e_L1())
+ *   P2GamePadRemap(ZFUIKeyCode.e_kL(), P2GamePadButton.e_R1())
+ *   P2GamePadRemap(ZFUIKeyCode.e_kQ(), P2GamePadButton.e_L2())
+ *   P2GamePadRemap(ZFUIKeyCode.e_kO(), P2GamePadButton.e_R2())
+ *   P2GamePadRemap(ZFUIKeyCode.e_kC(), P2GamePadButton.e_L3())
+ *   P2GamePadRemap(ZFUIKeyCode.e_kN(), P2GamePadButton.e_R3())
+ *   P2GamePadRemap(ZFUIKeyCode.e_kF(), P2GamePadButton.e_Select())
+ *   P2GamePadRemap(ZFUIKeyCode.e_kH(), P2GamePadButton.e_Start())
+ *
+ *   // save and load
+ *   ZFObjectIOSave(ZFOutputForFile('xxx.json'), P2GamePadRemapSave())
+ *   P2GamePadRemapLoad(ZFObjectIOLoad(ZFInputForFile('xxx.json')))
+ * @endcode
  */
 ZFMETHOD_FUNC_DECLARE_3(ZFLIB_ZFGameKit, void, P2GamePadRemap
         , ZFMP_IN(ZFUIKeyCode, from)
