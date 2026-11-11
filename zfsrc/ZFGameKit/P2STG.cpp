@@ -5,6 +5,12 @@ ZF_NAMESPACE_GLOBAL_BEGIN
 
 ZFOBJECT_REGISTER(P2MoverForVelocity)
 
+ZFPROPERTY_ON_UPDATE_DEFINE(P2MoverForVelocity, zffloat, p2_velocity) {
+    if(propertyValue <= 0) {
+        propertyValue = 5;
+    }
+}
+
 ZFMETHOD_DEFINE_2(P2MoverForVelocity, void, p2_move
         , ZFMP_IN(zffloat, x)
         , ZFMP_IN(zffloat, y)
@@ -46,12 +52,57 @@ void P2MoverForVelocity::p2_extOnUpdate(ZF_IN P2Unit *owner) {
         }
     }
 
+    zfint fadeFrame = (zfint)this->p2_fadeFrame();
     if(x != 0 || y != 0) {
-        zffloat t = this->p2_velocity() / zfm_sqrt(x * x + y * y);
+        _xPrev = x;
+        _yPrev = y;
+        if(fadeFrame != 0) {
+            if(_fade < 0) {
+                if(_fade > -fadeFrame) {
+                    _fade = fadeFrame + _fade;
+                }
+                else {
+                    _fade = 1;
+                }
+            }
+            else if(_fade < fadeFrame) {
+                ++_fade;
+            }
+        }
+        zffloat v = this->p2_velocity();
+        if(_fade < fadeFrame) {
+            v = v * _fade / fadeFrame;
+        }
+        zffloat t = v / zfm_sqrt(x * x + y * y);
         this->p2_ownerUnit()->p2_body()->p2_positionVelocity(ZFUIPointCreate(x * t, y * t));
     }
     else {
-        this->p2_ownerUnit()->p2_body()->p2_positionVelocity(ZFUIPointZero());
+        if(fadeFrame != 0) {
+            if(_fade < 0) {
+                if(_fade > -fadeFrame) {
+                    --_fade;
+                }
+            }
+            else {
+                if(_fade < fadeFrame) {
+                    _fade = _fade - fadeFrame;
+                }
+                else {
+                    _fade = -1;
+                }
+            }
+        }
+        if(_fade > -fadeFrame && (_xPrev || _yPrev)) {
+            zffloat v = this->p2_velocity() * (1 + (zffloat)_fade / fadeFrame);
+            x = _xPrev;
+            y = _yPrev;
+            zffloat t = v / zfm_sqrt(x * x + y * y);
+            this->p2_ownerUnit()->p2_body()->p2_positionVelocity(ZFUIPointCreate(x * t, y * t));
+        }
+        else {
+            _fade = 0;
+            this->p2_ownerUnit()->p2_body()->p2_positionVelocity(ZFUIPointZero());
+        }
     }
 }
 

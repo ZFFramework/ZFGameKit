@@ -17,13 +17,16 @@ zfclass ZFLIB_ZFGameKit P2MoverForVelocity : zfextend P2Ext {
 
 public:
     /** @brief velocity when moving unit */
-    ZFPROPERTY_ASSIGN(zffloat, p2_velocity, 5)
+    ZFPROPERTY_ASSIGN(zffloat, p2_velocity, 10)
+    ZFPROPERTY_ON_UPDATE_DECLARE(zffloat, p2_velocity)
     /**
      * @brief use which game pad to control, zfindexMax to disable
      *
      * when disabled, you may use #move to manually move
      */
     ZFPROPERTY_ASSIGN(zfindex, p2_gamePadIndex, 0)
+    /** @brief frame to fade when changing velocity */
+    ZFPROPERTY_ASSIGN(zfuint, p2_fadeFrame, 5)
 
 public:
     /**
@@ -47,9 +50,12 @@ protected:
 private:
     zffloat _x;
     zffloat _y;
+    zffloat _xPrev;
+    zffloat _yPrev;
+    zfint _fade;
 protected:
     /** @cond ZFPrivateDoc */
-    P2MoverForVelocity(void) : _x(0), _y(0) {}
+    P2MoverForVelocity(void) : _x(0), _y(0), _xPrev(0), _yPrev(0), _fade(0) {}
     /** @endcond */
 };
 
