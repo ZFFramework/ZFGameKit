@@ -13,7 +13,7 @@ ZF_NAMESPACE_GLOBAL_BEGIN
  * @brief helper to move #P2Unit with velocity
  */
 zfclass ZFLIB_ZFGameKit P2MoverForVelocity : zfextend P2Ext {
-    ZFOBJECT_DECLARE(P2MoverForVelocity, P2Ext)
+    ZFOBJECT_DECLARE_WITH_CUSTOM_CTOR(P2MoverForVelocity, P2Ext)
 
 public:
     /** @brief velocity when moving unit */
@@ -24,14 +24,14 @@ public:
      * when disabled, you may use #move to manually move
      */
     ZFPROPERTY_ASSIGN(zfindex, p2_gamePadIndex, 0)
-    ZFPROPERTY_ON_UPDATE_DECLARE(zfindex, p2_gamePadIndex)
 
 public:
     /**
      * @brief manually move, top right is positive
      *
      * after called, unit would keep moving with (x, y) direction of #velocity,
-     * must manually call move(0, 0) to stop moving
+     * ignoring #p2_gamePadIndex,
+     * until manually call move(0, 0) to stop
      */
     ZFMETHOD_DECLARE_2(void, p2_move
             , ZFMP_IN(zffloat, x)
@@ -40,9 +40,17 @@ public:
 
 protected:
     zfoverride
-    virtual void p2_extOnAttach(ZF_IN P2Unit *owner);
+    virtual void p2_extOnAttach(ZF_IN P2Unit *owner, ZF_IN_OUT zfbool &listenOnUpdate);
     zfoverride
-    virtual void p2_extOnDetach(ZF_IN P2Unit *owner);
+    virtual void p2_extOnUpdate(ZF_IN P2Unit *owner);
+
+private:
+    zffloat _x;
+    zffloat _y;
+protected:
+    /** @cond ZFPrivateDoc */
+    P2MoverForVelocity(void) : _x(0), _y(0) {}
+    /** @endcond */
 };
 
 ZF_NAMESPACE_GLOBAL_END

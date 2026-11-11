@@ -774,10 +774,13 @@ public:
 
 protected:
     /** @brief see #P2Ext::E_P2ExtOnAttach */
-    virtual void p2_extOnAttach(ZF_IN P2Unit *owner) {
+    virtual void p2_extOnAttach(ZF_IN P2Unit *owner, ZF_IN_OUT zfbool &listenOnUpdate) {
     }
     /** @brief see #P2Ext::E_P2ExtOnDetach */
     virtual void p2_extOnDetach(ZF_IN P2Unit *owner) {
+    }
+    /** @brief see #p2_extOnAttach, only called when listenOnUpdate set to true */
+    virtual void p2_extOnUpdate(ZF_IN P2Unit *owner) {
     }
 
 private:

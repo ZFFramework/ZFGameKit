@@ -15,18 +15,17 @@ zfclassNotPOD _ZFP_P2GamePad {
 public:
     enum {
         PAD_MAX = 8,
+        BTN_MAX = v_P2GamePadButton::e_Custom7 + 1,
     };
     zfclassNotPOD Pad {
     public:
         ZFObserver ob;
         zfbool connected;
-        ZFCoreMap<P2GamePadButton, zffloat> valueMap;
+        zffloat valueMap[BTN_MAX];
         ZFCoreMap<P2GamePadButton, P2GamePadButton> remapMap;
     public:
         void valueMapRemoveAll(void) {
-            for(zfiter it = valueMap.iter(); it; ++it) {
-                valueMap.iterValue(it, 0);
-            }
+            zfmemset(this->valueMap, 0, sizeof(this->valueMap));
         }
     };
 public:
@@ -81,7 +80,7 @@ public:
         if(value != 0) {
             _ZFP_P2GamePad::changeState(padIndex, zftrue);
         }
-        zffloat &valueRef = pad.valueMap.access(btn);
+        zffloat &valueRef = pad.valueMap[btn];
         if(valueRef != value) {
             valueRef = value;
             pad.ob.observerNotify(ZFGlobalEvent::E_P2GamePadButtonUpdate(), ZFArgs()
@@ -156,14 +155,14 @@ ZFMETHOD_FUNC_DEFINE_2(zfbool, P2GamePadPressed
         , ZFMP_IN_OPT(zfindex, padIndex, 0)
         ) {
     ZFCoreAssert(padIndex < _ZFP_P2GamePad::PAD_MAX);
-    return _ZFP_P2GamePad::pads()[padIndex].valueMap.access(btn) != 0;
+    return _ZFP_P2GamePad::pads()[padIndex].valueMap[btn] != 0;
 }
 ZFMETHOD_FUNC_DEFINE_2(zffloat, P2GamePadValue
         , ZFMP_IN(P2GamePadButton, btn)
         , ZFMP_IN_OPT(zfindex, padIndex, 0)
         ) {
     ZFCoreAssert(padIndex < _ZFP_P2GamePad::PAD_MAX);
-    return _ZFP_P2GamePad::pads()[padIndex].valueMap.access(btn);
+    return _ZFP_P2GamePad::pads()[padIndex].valueMap[btn];
 }
 
 ZFMETHOD_FUNC_DEFINE_0(ZFCoreArray<zfindex>, P2GamePadIndexList) {

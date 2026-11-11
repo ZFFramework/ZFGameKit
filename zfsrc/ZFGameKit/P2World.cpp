@@ -228,14 +228,32 @@ zfclassNotPOD _ZFP_P2ExtPrivate {
 public:
     static void attach(ZF_IN P2Unit *owner, ZF_IN P2Ext *ext) {
         ext->_ZFP_ownerUnit = owner;
-        ext->p2_extOnAttach(owner);
+        zfbool listenOnUpdate = zffalse;
+        ext->p2_extOnAttach(owner, listenOnUpdate);
         ext->observerNotify(P2Ext::E_P2ExtOnAttach(), ZFArgs()
                 .param0(owner)
                 );
+        if(listenOnUpdate) {
+            ZFLISTENER_1(impl
+                    , P2Ext *, ext
+                    ) {
+                if(ext->p2_ownerUnit()) {
+                    ext->p2_extOnUpdate(ext->p2_ownerUnit());
+                }
+            } ZFLISTENER_END()
+            ext->objectTag(zftext("_ZFP_P2ExtListenOnUpdate"), zfobj<v_ZFListener>(impl));
+            owner->observerAdd(P2Unit::E_P2Update(), impl);
+        }
     }
     static void detach(ZF_IN P2Ext *ext) {
         P2Unit *owner = ext->_ZFP_ownerUnit;
         ext->_ZFP_ownerUnit = zfnull;
+        {
+            zfautoT<v_ZFListener> t = ext->objectTagRemoveAndGet(zftext("_ZFP_P2ExtListenOnUpdate"));
+            if(t) {
+                owner->observerRemove(P2Unit::E_P2Update(), t->zfv);
+            }
+        }
         ext->observerNotify(P2Ext::E_P2ExtOnDetach(), ZFArgs()
                 .param0(owner)
                 );

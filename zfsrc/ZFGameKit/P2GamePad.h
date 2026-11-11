@@ -13,34 +13,34 @@ ZF_NAMESPACE_GLOBAL_BEGIN
  * @brief game pad button define
  */
 ZFENUM_BEGIN(ZFLIB_ZFGameKit, P2GamePadButton)
-    ZFENUM_VALUE(DPadL = 1 << 0) /**< @brief dpad left */
-    ZFENUM_VALUE(DPadT = 1 << 1) /**< @brief dpad top */
-    ZFENUM_VALUE(DPadR = 1 << 2) /**< @brief dpad right */
-    ZFENUM_VALUE(DPadB = 1 << 3) /**< @brief dpad bottom */
-    ZFENUM_VALUE(BtnL = 1 << 4) /**< @brief button left */
-    ZFENUM_VALUE(BtnT = 1 << 5) /**< @brief button top */
-    ZFENUM_VALUE(BtnR = 1 << 6) /**< @brief button right */
-    ZFENUM_VALUE(BtnB = 1 << 7) /**< @brief button bottom */
-    ZFENUM_VALUE(Select = 1 << 8) /**< @brief select button */
-    ZFENUM_VALUE(Start = 1 << 9) /**< @brief start button */
-    ZFENUM_VALUE(L1 = 1 << 10) /**< @brief L1 */
-    ZFENUM_VALUE(R1 = 1 << 11) /**< @brief R1 */
-    ZFENUM_VALUE(L2 = 1 << 12) /**< @brief L2 */
-    ZFENUM_VALUE(R2 = 1 << 13) /**< @brief R2 */
-    ZFENUM_VALUE(L3 = 1 << 14) /**< @brief L3 */
-    ZFENUM_VALUE(R3 = 1 << 15) /**< @brief R3 */
-    ZFENUM_VALUE(LStickX = 1 << 16) /**< @brief left stick's X axis, right is positive */
-    ZFENUM_VALUE(LStickY = 1 << 17) /**< @brief left stick's Y axis, top is positive */
-    ZFENUM_VALUE(RStickX = 1 << 18) /**< @brief left stick's X axis, right is positive */
-    ZFENUM_VALUE(RStickY = 1 << 19) /**< @brief left stick's Y axis, top is positive */
-    ZFENUM_VALUE(Custom0 = 1 << 20) /**< @brief custom button */
-    ZFENUM_VALUE(Custom1 = 1 << 21) /**< @brief custom button */
-    ZFENUM_VALUE(Custom2 = 1 << 22) /**< @brief custom button */
-    ZFENUM_VALUE(Custom3 = 1 << 23) /**< @brief custom button */
-    ZFENUM_VALUE(Custom4 = 1 << 24) /**< @brief custom button */
-    ZFENUM_VALUE(Custom5 = 1 << 25) /**< @brief custom button */
-    ZFENUM_VALUE(Custom6 = 1 << 26) /**< @brief custom button */
-    ZFENUM_VALUE(Custom7 = 1 << 27) /**< @brief custom button */
+    ZFENUM_VALUE(DPadL) /**< @brief dpad left */
+    ZFENUM_VALUE(DPadT) /**< @brief dpad top */
+    ZFENUM_VALUE(DPadR) /**< @brief dpad right */
+    ZFENUM_VALUE(DPadB) /**< @brief dpad bottom */
+    ZFENUM_VALUE(BtnL) /**< @brief button left */
+    ZFENUM_VALUE(BtnT) /**< @brief button top */
+    ZFENUM_VALUE(BtnR) /**< @brief button right */
+    ZFENUM_VALUE(BtnB) /**< @brief button bottom */
+    ZFENUM_VALUE(Select) /**< @brief select button */
+    ZFENUM_VALUE(Start) /**< @brief start button */
+    ZFENUM_VALUE(L1) /**< @brief L1 */
+    ZFENUM_VALUE(R1) /**< @brief R1 */
+    ZFENUM_VALUE(L2) /**< @brief L2 */
+    ZFENUM_VALUE(R2) /**< @brief R2 */
+    ZFENUM_VALUE(L3) /**< @brief L3 */
+    ZFENUM_VALUE(R3) /**< @brief R3 */
+    ZFENUM_VALUE(LStickX) /**< @brief left stick's X axis, right is positive */
+    ZFENUM_VALUE(LStickY) /**< @brief left stick's Y axis, top is positive */
+    ZFENUM_VALUE(RStickX) /**< @brief left stick's X axis, right is positive */
+    ZFENUM_VALUE(RStickY) /**< @brief left stick's Y axis, top is positive */
+    ZFENUM_VALUE(Custom0) /**< @brief custom button */
+    ZFENUM_VALUE(Custom1) /**< @brief custom button */
+    ZFENUM_VALUE(Custom2) /**< @brief custom button */
+    ZFENUM_VALUE(Custom3) /**< @brief custom button */
+    ZFENUM_VALUE(Custom4) /**< @brief custom button */
+    ZFENUM_VALUE(Custom5) /**< @brief custom button */
+    ZFENUM_VALUE(Custom6) /**< @brief custom button */
+    ZFENUM_VALUE(Custom7) /**< @brief custom button */
 ZFENUM_SEPARATOR()
     ZFENUM_VALUE_REGISTER(DPadL)
     ZFENUM_VALUE_REGISTER(DPadT)
