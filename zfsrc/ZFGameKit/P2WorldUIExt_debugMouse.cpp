@@ -260,14 +260,19 @@ private:
         _moveValueBak = _target->p2_positionCur();
 
         _moveHelper = zfobj<ZFUIView>();
-        world->p2_unit(_moveHelper);
+        world->p2_body(_moveHelper);
         _moveHelper->p2_type(v_P2BodyType::e_Static);
         _moveHelper->p2_position(_moveValueBak);
+        _moveHelper->p2_bodyId(zftext("_ZFP_P2DebugMouseMoveHelper"));
+
+        if(!_target->p2_bodyId()) {
+            _target->p2_bodyId(zftext("_ZFP_P2DebugMouseMoveTarget"));
+        }
 
         _moveCtrl = zfobj<P2JointMouse>();
         world->p2_joint(_moveCtrl);
-        _moveCtrl->p2_body0(_moveHelper);
-        _moveCtrl->p2_body1(_target);
+        _moveCtrl->p2_bodyId0(_moveHelper->p2_bodyId());
+        _moveCtrl->p2_bodyId1(_target->p2_bodyId());
         _moveCtrl->p2_position(_moveValueBak);
 
         _target->p2_sleeping(zffalse);
@@ -281,6 +286,9 @@ private:
         _moveCtrl = zfnull;
         _moveHelper->p2_removeFromParent();
         _moveHelper = zfnull;
+        if(_target->p2_bodyId() == "_ZFP_P2DebugMouseMoveTarget") {
+            _target->p2_bodyId(zfnull);
+        }
         P2WorldView *worldView = zfcast(P2WorldView *, _target->p2_ownerWorld());
         if(worldView && worldView->debugMousePositionAlign() > 0) {
             ZFUIPoint t = _target->p2_positionCur();

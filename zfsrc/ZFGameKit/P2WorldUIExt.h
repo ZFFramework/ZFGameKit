@@ -19,20 +19,20 @@ zfclassFwd _ZFP_P2WorldViewPrivate;
  * @code
  *   local world = P2WorldView()
  *   world
- *      :p2_unit(SomeView()
+ *      :p2_body(SomeView()
  *          :p2_bodyId('body id 0')
  *          :p2_shape(SomeShape())
  *      )
- *      :p2_unit(P2Unit()
+ *      :p2_body(SomeView()
  *          :p2_body(SomeView()
  *              :p2_bodyId('body id 1')
  *          )
- *          :p2_part(SomeView()
+ *          :p2_body(SomeView()
  *              :p2_bodyId('body id 2')
  *          )
  *          :p2_joint(SomeJoint('body id 1', 'body id 2'))
  *      )
- *      :p2_unit(zfres('some_unit.xml'))
+ *      :p2_body(zfres('some_unit.xml'))
  *      :p2_joint(SomeJoint('body id 0', 'body id 1'))
  * @endcode
  *

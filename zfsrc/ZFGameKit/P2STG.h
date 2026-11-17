@@ -10,7 +10,7 @@
 ZF_NAMESPACE_GLOBAL_BEGIN
 
 /**
- * @brief helper to move #P2Unit with velocity
+ * @brief helper to move #P2Body with velocity
  */
 zfclass ZFLIB_ZFGameKit P2MoverForVelocity : zfextend P2Ext {
     ZFOBJECT_DECLARE_WITH_CUSTOM_CTOR(P2MoverForVelocity, P2Ext)
@@ -43,9 +43,9 @@ public:
 
 protected:
     zfoverride
-    virtual void p2_extOnAttach(ZF_IN P2Unit *owner, ZF_IN_OUT zfbool &listenOnUpdate);
+    virtual void p2_extAttach(ZF_IN P2Body *owner, ZF_IN_OUT zfbool &listenOnUpdate);
     zfoverride
-    virtual void p2_extOnUpdate(ZF_IN P2Unit *owner);
+    virtual void p2_extUpdate(ZF_IN P2Body *owner);
 
 private:
     zffloat _x;

@@ -18,12 +18,12 @@ ZFMETHOD_DEFINE_2(P2MoverForVelocity, void, p2_move
     _x = x;
     _y = y;
 }
-void P2MoverForVelocity::p2_extOnAttach(ZF_IN P2Unit *owner, ZF_IN_OUT zfbool &listenOnUpdate) {
-    zfsuper::p2_extOnAttach(owner, listenOnUpdate);
+void P2MoverForVelocity::p2_extAttach(ZF_IN P2Body *owner, ZF_IN_OUT zfbool &listenOnUpdate) {
+    zfsuper::p2_extAttach(owner, listenOnUpdate);
     listenOnUpdate = zftrue;
 }
-void P2MoverForVelocity::p2_extOnUpdate(ZF_IN P2Unit *owner) {
-    zfsuper::p2_extOnUpdate(owner);
+void P2MoverForVelocity::p2_extUpdate(ZF_IN P2Body *owner) {
+    zfsuper::p2_extUpdate(owner);
     zffloat x = 0;
     zffloat y = 0;
     if(_x != 0 || _y != 0) {
@@ -69,12 +69,12 @@ void P2MoverForVelocity::p2_extOnUpdate(ZF_IN P2Unit *owner) {
                 ++_fade;
             }
         }
-        zffloat v = this->p2_velocity();
+        zffloat v = this->p2_velocity() * this->p2_ownerBody()->p2_bodyScaleFixed();
         if(_fade < fadeFrame) {
             v = v * _fade / fadeFrame;
         }
         zffloat t = v / zfm_sqrt(x * x + y * y);
-        this->p2_ownerUnit()->p2_body()->p2_positionVelocity(ZFUIPointCreate(x * t, y * t));
+        this->p2_ownerBody()->p2_positionVelocity(ZFUIPointCreate(x * t, y * t));
     }
     else {
         if(fadeFrame != 0) {
@@ -93,15 +93,15 @@ void P2MoverForVelocity::p2_extOnUpdate(ZF_IN P2Unit *owner) {
             }
         }
         if(_fade > -fadeFrame && (_xPrev || _yPrev)) {
-            zffloat v = this->p2_velocity() * (1 + (zffloat)_fade / fadeFrame);
+            zffloat v = this->p2_velocity() * this->p2_ownerBody()->p2_bodyScaleFixed() * (1 + (zffloat)_fade / fadeFrame);
             x = _xPrev;
             y = _yPrev;
             zffloat t = v / zfm_sqrt(x * x + y * y);
-            this->p2_ownerUnit()->p2_body()->p2_positionVelocity(ZFUIPointCreate(x * t, y * t));
+            this->p2_ownerBody()->p2_positionVelocity(ZFUIPointCreate(x * t, y * t));
         }
         else {
             _fade = 0;
-            this->p2_ownerUnit()->p2_body()->p2_positionVelocity(ZFUIPointZero());
+            this->p2_ownerBody()->p2_positionVelocity(ZFUIPointZero());
         }
     }
 }

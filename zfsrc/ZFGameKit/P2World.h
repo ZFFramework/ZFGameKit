@@ -10,7 +10,6 @@
 ZF_NAMESPACE_GLOBAL_BEGIN
 
 zfclassFwd P2Body;
-zfclassFwd P2Unit;
 zfclassFwd P2World;
 
 /** @brief a dummy value indicates largest value in physics world */
@@ -41,8 +40,6 @@ zfabstract ZFLIB_ZFGameKit P2Shape : zfextend ZFStyle {
 public:
     /** @brief see #P2World */
     ZFMETHOD_DECLARE_0(P2Body *, p2_ownerBody)
-    /** @brief see #P2World */
-    ZFMETHOD_DECLARE_0(P2Unit *, p2_ownerUnit)
     /** @brief see #P2World */
     ZFMETHOD_DECLARE_0(P2World *, p2_ownerWorld)
 
@@ -92,9 +89,15 @@ public:
     ZFPROPERTY_ON_UPDATE_DECLARE(zffloat, p2_matTangentSpeed)
 
 public:
-    /** @brief see #P2World, get world AABB, valid only after added to world, already applied with #P2Unit::p2_unitScale */
+    /**
+     * @brief see #P2World, get world AABB, valid only after added to world,
+     *   already applied with #P2Body::p2_bodyScale and all parent transforms
+     */
     ZFMETHOD_DECLARE_0(ZFUIRect, p2_AABB)
-    /** @brief see #P2World, get local AABB, according to current property only, not applied with #P2Unit::p2_unitScale */
+    /**
+     * @brief see #P2World, get local AABB, according to current property only,
+     *   not applied with #P2Body::p2_bodyScale
+     */
     ZFMETHOD_DECLARE_0(ZFUIRect, p2_AABBLocal)
 
 public:
@@ -105,7 +108,7 @@ protected:
     /** @brief for impl only */
     virtual ZFUIRect p2impl_AABBLocal(void) zfpurevirtual;
     /** @brief for impl only */
-    virtual inline void p2impl_shapeCreate(ZF_IN P2Body *ownerBody, ZF_IN zffloat unitScale) {}
+    virtual inline void p2impl_shapeCreate(ZF_IN P2Body *ownerBody, ZF_IN zffloat shapeScale) {}
     zfoverride
     virtual void objectOnInit(void);
     zfoverride
@@ -139,7 +142,7 @@ protected:
     zfoverride
     virtual ZFUIRect p2impl_AABBLocal(void);
     zfoverride
-    virtual void p2impl_shapeCreate(ZF_IN P2Body *ownerBody, ZF_IN zffloat unitScale);
+    virtual void p2impl_shapeCreate(ZF_IN P2Body *ownerBody, ZF_IN zffloat shapeScale);
 };
 /** @brief see #P2World */
 zfclass ZFLIB_ZFGameKit P2ShapeCircle : zfextend P2Shape {
@@ -154,7 +157,7 @@ protected:
     zfoverride
     virtual ZFUIRect p2impl_AABBLocal(void);
     zfoverride
-    virtual void p2impl_shapeCreate(ZF_IN P2Body *ownerBody, ZF_IN zffloat unitScale);
+    virtual void p2impl_shapeCreate(ZF_IN P2Body *ownerBody, ZF_IN zffloat shapeScale);
 };
 /** @brief see #P2World */
 zfclass ZFLIB_ZFGameKit P2ShapeCapsule : zfextend P2Shape {
@@ -172,7 +175,7 @@ protected:
     zfoverride
     virtual ZFUIRect p2impl_AABBLocal(void);
     zfoverride
-    virtual void p2impl_shapeCreate(ZF_IN P2Body *ownerBody, ZF_IN zffloat unitScale);
+    virtual void p2impl_shapeCreate(ZF_IN P2Body *ownerBody, ZF_IN zffloat shapeScale);
 };
 /** @brief see #P2World */
 zfclass ZFLIB_ZFGameKit P2ShapePolygon : zfextend P2Shape {
@@ -198,7 +201,7 @@ protected:
     zfoverride
     virtual ZFUIRect p2impl_AABBLocal(void);
     zfoverride
-    virtual void p2impl_shapeCreate(ZF_IN P2Body *ownerBody, ZF_IN zffloat unitScale);
+    virtual void p2impl_shapeCreate(ZF_IN P2Body *ownerBody, ZF_IN zffloat shapeScale);
 
 public:
     /** @brief use #p2_polygon to update, do not access manually */
@@ -224,7 +227,7 @@ public:
     ZFMETHOD_DECLARE_0(P2Body *, p2_ownerBody1)
     /** @brief see #P2World */
     ZFMETHOD_DECLARE_0(P2World *, p2_ownerWorld)
-    /**@brief see #P2World, joint's owner, maybe #P2World or #P2Unit */
+    /**@brief see #P2World, joint's owner, maybe #P2World or #P2Body */
     ZFMETHOD_DECLARE_0(ZFObject *, p2_owner)
 
     /** @brief see #P2World */
@@ -234,24 +237,12 @@ public:
     /** @brief see #P2World */
     ZFPROPERTY_ASSIGN(zfstring, p2_jointId)
 
-    /** @brief see #P2World */
+    /** @brief see #P2World::p2_bodyFind, #P2Body::p2_bodyFind */
     ZFPROPERTY_ASSIGN(zfstring, p2_bodyId0)
-    /** @brief see #P2World */
+    ZFPROPERTY_ON_UPDATE_DECLARE(zfstring, p2_bodyId0)
+    /** @brief see #P2World::p2_bodyFind, #P2Body::p2_bodyFind */
     ZFPROPERTY_ASSIGN(zfstring, p2_bodyId1)
-
-    /** @brief see #P2World */
-    ZFMETHOD_DECLARE_1(void, p2_body0
-            , ZFMP_IN(P2Body *, v)
-            )
-    /** @brief see #P2World */
-    ZFMETHOD_DECLARE_0(P2Body *, p2_body0)
-
-    /** @brief see #P2World */
-    ZFMETHOD_DECLARE_1(void, p2_body1
-            , ZFMP_IN(P2Body *, v)
-            )
-    /** @brief see #P2World */
-    ZFMETHOD_DECLARE_0(P2Body *, p2_body1)
+    ZFPROPERTY_ON_UPDATE_DECLARE(zfstring, p2_bodyId1)
 
     /** @brief see #P2World */
     ZFPROPERTY_ASSIGN(zfbool, p2_contactEnable)
@@ -515,7 +506,13 @@ protected:
     virtual void p2impl_jointCreate(ZF_IN P2Body *ownerBody0, ZF_IN P2Body *ownerBody1);
 };
 
-/** @brief see #P2World */
+/**
+ * @brief see #P2World
+ *
+ * note:
+ * -  the body needs to be drag by mouse should be set to #P2Joint::p2_bodyId1
+ * -  #P2Joint::p2_bodyId0 usually should be set to ground or a dummy static body
+ */
 zfclass ZFLIB_ZFGameKit P2JointMouse : zfextend P2Joint {
     ZFOBJECT_DECLARE(P2JointMouse, P2Joint)
 
@@ -527,6 +524,67 @@ public:
 protected:
     zfoverride
     virtual void p2impl_jointCreate(ZF_IN P2Body *ownerBody0, ZF_IN P2Body *ownerBody1);
+};
+
+// ============================================================
+zfclassFwd _ZFP_P2ExtPrivate;
+/** @brief see #P2Body::p2_ext */
+zfclass ZFLIB_ZFGameKit P2Ext : zfextend ZFStyle {
+    ZFOBJECT_DECLARE_WITH_CUSTOM_CTOR(P2Ext, ZFStyle)
+
+public:
+    /**
+     * @brief see #ZFObject::observerNotify
+     *
+     * called when attached to #P2Body::p2_ext,
+     * param0 is the owner #P2Body
+     */
+    ZFEVENT(P2ExtAttach)
+    /**
+     * @brief see #ZFObject::observerNotify
+     *
+     * called when detached from #P2Body::p2_ext,
+     * param0 is the owner #P2Body
+     */
+    ZFEVENT(P2ExtDetach)
+    /**
+     * @brief see #ZFObject::observerNotify
+     *
+     * called when #P2Body::E_P2Update and this ext has attached,
+     * param0 is the owner #P2Body
+     */
+    ZFEVENT(P2ExtUpdate)
+
+public:
+    /** @brief see #P2Body::p2_ext */
+    ZFMETHOD_DECLARE_0(P2Body *, p2_ownerBody)
+
+protected:
+    /** @brief see #P2Ext::E_P2ExtAttach */
+    virtual void p2_extAttach(ZF_IN P2Body *owner, ZF_IN_OUT zfbool &listenOnUpdate) {
+    }
+    /** @brief see #P2Ext::E_P2ExtDetach */
+    virtual void p2_extDetach(ZF_IN P2Body *owner) {
+    }
+    /**
+     * @brief see #p2_extAttach, only called when listenOnUpdate set to true,
+     *   or #P2Ext::E_P2ExtUpdate observer attached
+     */
+    virtual void p2_extUpdate(ZF_IN P2Body *owner) {
+    }
+
+    zfoverride
+    virtual void observerOnAdd(ZF_IN zfidentity eventId);
+    zfoverride
+    virtual void observerOnRemove(ZF_IN zfidentity eventId);
+
+private:
+    friend zfclassFwd _ZFP_P2ExtPrivate;
+    P2Body *_ZFP_ownerBody;
+protected:
+    /** @cond ZFPrivateDoc */
+    P2Ext(void) : _ZFP_ownerBody(zfnull) {}
+    /** @endcond */
 };
 
 // ============================================================
@@ -542,61 +600,122 @@ ZFENUM_SEPARATOR()
 ZFENUM_END(ZFLIB_ZFGameKit, P2BodyType)
 ZFENUM_REG(ZFLIB_ZFGameKit, P2BodyType)
 
+/** @brief see #P2Body::p2_toLocal */
+zfclassPOD ZFLIB_ZFGameKit P2BodyTransform {
+public:
+    ZFUIPoint p2_position; /**< @brief see #P2Body::p2_toLocal */
+    zffloat p2_rotation /**< @brief see #P2Body::p2_toLocal */;
+    zffloat p2_bodyScale; /**< @brief see #P2Body::p2_toLocal */
+    ZFUIPoint p2_positionVelocity; /**< @brief see #P2Body::p2_toLocal */
+    zffloat p2_rotationVelocity; /**< @brief see #P2Body::p2_toLocal */
+};
+ZFTYPEID_DECLARE(ZFLIB_ZFGameKit, P2BodyTransform, P2BodyTransform)
+ZFTYPEID_REG(ZFLIB_ZFGameKit, P2BodyTransform, P2BodyTransform)
+ZFOUTPUT_TYPE(P2BodyTransform, {P2BodyTransformToStringT(s, v);})
+ZFCORE_POD_DECLARE(P2BodyTransform)
+
+/** @brief convert transform from global to local, transforms ordered from specified body to root */
+ZFMETHOD_FUNC_DECLARE_3(ZFLIB_ZFGameKit, void, P2BodyTransformToLocal
+        , ZFMP_OUT(P2BodyTransform &, transformLocal)
+        , ZFMP_IN(const P2BodyTransform &, transformGlobal)
+        , ZFMP_IN(const ZFCoreArray<P2BodyTransform> &, transforms)
+        )
+/** @brief convert transform from local to global, transforms ordered from specified body to root */
+ZFMETHOD_FUNC_DECLARE_3(ZFLIB_ZFGameKit, void, P2BodyTransformToGlobal
+        , ZFMP_OUT(P2BodyTransform &, transformGlobal)
+        , ZFMP_IN(const P2BodyTransform &, transformLocal)
+        , ZFMP_IN(const ZFCoreArray<P2BodyTransform> &, transforms)
+        )
+
 zfclassFwd _ZFP_P2BodyPrivate;
 /** @brief see #P2World */
 zfclass ZFLIB_ZFGameKit P2Body : zfextend ZFStyle {
     ZFOBJECT_DECLARE(P2Body, ZFStyle)
 
 public:
-    /** @brief see #P2World */
-    ZFMETHOD_DECLARE_0(P2Unit *, p2_ownerUnit)
-    /** @brief see #P2World */
-    ZFMETHOD_DECLARE_0(P2World *, p2_ownerWorld)
-
-    /** @brief see #P2World, note: auto remove #p2_ownerUnit if this body is main #P2Unit::p2_body */
-    ZFMETHOD_DECLARE_0(void, p2_removeFromParent)
-
-    /** @brief see #P2World, must not manually modify */
-    ZFPROPERTY_RETAIN_READONLY(zfanyT<ZFArray>, p2_shapeList, zfobj<ZFArray>())
-    /** @brief see #P2World */
-    ZFMETHOD_DECLARE_1(void, p2_shape
-            , ZFMP_IN(P2Shape *, shape)
-            )
-    /** @brief see #P2World */
-    ZFMETHOD_DECLARE_0(zfindex, p2_shapeCount)
-    /** @brief see #P2World */
-    ZFMETHOD_DECLARE_1(P2Shape *, p2_shapeAt
-            , ZFMP_IN(zfindex, index)
-            )
-    /** @brief see #P2World */
-    ZFMETHOD_DECLARE_1(zfautoT<P2Shape>, p2_shapeRemoveAt
-            , ZFMP_IN(zfindex, index)
-            )
-    /** @brief see #P2World */
-    ZFMETHOD_DECLARE_1(zfautoT<P2Shape>, p2_shapeRemove
-            , ZFMP_IN(P2Shape *, shape)
-            )
-    /** @brief see #P2World */
-    ZFMETHOD_DECLARE_0(void, p2_shapeRemoveAll)
-
-    /** @brief see #P2World, note this method is expensive */
-    ZFMETHOD_DECLARE_1(P2Shape *, p2_shapeFind
-            , ZFMP_IN(const zfstring &, shapeId)
-            )
-    /** @brief see #P2World, note this method is expensive */
-    ZFMETHOD_DECLARE_1(P2Joint *, p2_jointFind
-            , ZFMP_IN(const zfstring &, jointId)
-            )
+    /**
+     * @brief see #ZFObject::observerNotify
+     *
+     * called when root body visibility changed by #P2World::p2_UIVisibleArea,
+     * current visibility can be checked by #p2_bodyVisible
+     */
+    ZFEVENT(P2VisibilityUpdate)
 
     /**
-     * @brief see #P2World
+     * @brief see #ZFObject::observerNotify
      *
-     * all joints that referenced this body,
-     * including joints in #P2Unit::p2_jointList and #P2World::p2_jointList
-     * must not manually modify,
-     * valid only after added to world and first time updated
+     * called when any child shape of this body got #P2SensorEvent::p2_sensorEnterList,
+     * and this body is the sensor\n
+     * param0 is the visitor #P2Body
      */
-    ZFMETHOD_DECLARE_0(ZFArray *, p2_refJointList)
+    ZFEVENT(P2SensorEnter)
+    /**
+     * @brief see #ZFObject::observerNotify
+     *
+     * called when any child shape of this body got #P2SensorEvent::p2_sensorExitList,
+     * and this body is the sensor\n
+     * param0 is the visitor #P2Body
+     */
+    ZFEVENT(P2SensorExit)
+    /**
+     * @brief see #ZFObject::observerNotify
+     *
+     * called when any child shape of this body got #P2SensorEvent::p2_sensorEnterList,
+     * and this body is the visitor\n
+     * param0 is the sensor #P2Body
+     */
+    ZFEVENT(P2SensorVisitorEnter)
+    /**
+     * @brief see #ZFObject::observerNotify
+     *
+     * called when any child shape of this body got #P2SensorEvent::p2_sensorExitList,
+     * and this body is the visitor\n
+     * param0 is the sensor #P2Body
+     */
+    ZFEVENT(P2SensorVisitorExit)
+
+    /**
+     * @brief see #ZFObject::observerNotify
+     *
+     * called before contact, to filter and prevent further contact,
+     * param0 is the other #P2Body,
+     * param1 is the #P2ContactEventData
+     */
+    ZFEVENT(P2ContactFilter)
+    /**
+     * @brief see #ZFObject::observerNotify
+     *
+     * called when any child shape of this body got #P2ContactEvent::p2_contactEnterList\n
+     * param0 is the other #P2Body,
+     * param1 is the #P2ContactEventData
+     */
+    ZFEVENT(P2ContactEnter)
+    /**
+     * @brief see #ZFObject::observerNotify
+     *
+     * called when any child shape of this body got #P2ContactEvent::p2_contactExitList\n
+     * param0 is the other #P2Body,
+     * param1 is the #P2ContactEventData
+     */
+    ZFEVENT(P2ContactExit)
+
+    /**
+     * @brief see #ZFObject::observerNotify
+     *
+     * called during each simulation step, take care of performance
+     */
+    ZFEVENT(P2Update)
+
+public:
+    /** @brief see #P2World */
+    ZFMETHOD_DECLARE_0(P2Body *, p2_ownerBody)
+    /** @brief see #P2World */
+    ZFMETHOD_DECLARE_0(P2World *, p2_ownerWorld)
+    /** @brief see #P2World, body's owner, maybe #P2World or #P2Body */
+    ZFMETHOD_DECLARE_0(ZFObject *, p2_owner)
+
+    /** @brief see #P2World */
+    ZFMETHOD_DECLARE_0(void, p2_removeFromParent)
 
 public:
     /** @brief see #P2World, must be unique within same #P2World */
@@ -605,6 +724,12 @@ public:
     /** @brief see #P2World */
     ZFPROPERTY_ASSIGN(P2BodyType, p2_type)
     ZFPROPERTY_ON_UPDATE_DECLARE(P2BodyType, p2_type)
+
+    /** @brief see #p2_toLocal, note changing scale is heavy task */
+    ZFPROPERTY_ASSIGN(zffloat, p2_bodyScale, 1)
+    ZFPROPERTY_ON_UPDATE_DECLARE(zffloat, p2_bodyScale)
+    /** @brief see #p2_toLocal, this body and all of #p2_ownerBody's #p2_bodyScale */
+    ZFMETHOD_DECLARE_0(zffloat, p2_bodyScaleFixed)
 
     /** @brief see #P2World */
     ZFPROPERTY_ASSIGN(zfbool, p2_enable, zftrue)
@@ -622,20 +747,20 @@ public:
     ZFPROPERTY_ASSIGN(zffloat, p2_gravityScale, 1.0f)
     ZFPROPERTY_ON_UPDATE_DECLARE(zffloat, p2_gravityScale)
 
-    /** @brief see #P2World */
+    /** @brief see #p2_toLocal */
     ZFPROPERTY_ASSIGN(ZFUIPoint, p2_position)
     ZFPROPERTY_ON_UPDATE_DECLARE(ZFUIPoint, p2_position)
-    /** @brief see #P2World */
+    /** @brief see #p2_toLocal */
     ZFPROPERTY_ASSIGN(ZFUIPoint, p2_positionVelocity)
     ZFPROPERTY_ON_UPDATE_DECLARE(ZFUIPoint, p2_positionVelocity)
     /** @brief see #P2World */
     ZFPROPERTY_ASSIGN(zffloat, p2_positionDamping)
     ZFPROPERTY_ON_UPDATE_DECLARE(zffloat, p2_positionDamping)
 
-    /** @brief see #P2World, range in [0, 360] */
+    /** @brief see #p2_toLocal, range in [0, 360] */
     ZFPROPERTY_ASSIGN(zffloat, p2_rotation)
     ZFPROPERTY_ON_UPDATE_DECLARE(zffloat, p2_rotation)
-    /** @brief see #P2World */
+    /** @brief see #p2_toLocal */
     ZFPROPERTY_ASSIGN(zffloat, p2_rotationVelocity)
     ZFPROPERTY_ON_UPDATE_DECLARE(zffloat, p2_rotationVelocity)
     /** @brief see #P2World */
@@ -643,10 +768,14 @@ public:
     ZFPROPERTY_ON_UPDATE_DECLARE(zffloat, p2_rotationDamping)
 
 public:
-    /** @brief see #P2World, world AABB, note: calculate each time called, already applied with #P2Unit::p2_unitScale */
+    /**
+     * @brief see #P2World, world AABB, note: calculate each time called,
+     *   already applied with #P2Body::p2_bodyScale and all parent transforms
+     */
     ZFMETHOD_DECLARE_0(ZFUIRect, p2_AABB)
     /**
-     * @brief see #P2World, local AABB, calculate by each shape's #P2Shape::p2_AABBLocal, not applied with #P2Unit::p2_unitScale
+     * @brief see #P2World, local AABB, calculate by each shape's #P2Shape::p2_AABBLocal,
+     *   not applied with #P2Body::p2_bodyScale
      *
      * origin point position would be (0-p2_AABBLocal.x, 0-p2_AABBLocal.y), relative to p2_AABBLocal's left bottom
      *
@@ -656,7 +785,7 @@ public:
     /**
      * @brief see #P2World, relative to origin of #p2_AABBLocal, calculate and cached automatically
      *
-     * not applied with #P2Unit::p2_unitScale
+     * not applied with #P2Body::p2_bodyScale
      *
      * note: valid only after added to world
      */
@@ -673,15 +802,73 @@ public:
      */
     ZFMETHOD_DECLARE_0(zffloat, p2_rotationInertia)
 
-    /** @brief see #P2World */
+    /** @brief see #p2_toLocal */
+    ZFMETHOD_DECLARE_0(ZFUIPoint, p2_positionCurLocal)
+    /** @brief see #p2_toLocal */
+    ZFMETHOD_DECLARE_0(ZFUIPoint, p2_positionVelocityCurLocal)
+
+    /** @brief see #p2_toLocal */
+    ZFMETHOD_DECLARE_0(zffloat, p2_rotationCurLocal)
+    /** @brief see #p2_toLocal */
+    ZFMETHOD_DECLARE_0(zffloat, p2_rotationVelocityCurLocal)
+
+    /** @brief see #p2_toLocal */
     ZFMETHOD_DECLARE_0(ZFUIPoint, p2_positionCur)
-    /** @brief see #P2World */
+    /** @brief see #p2_toLocal */
     ZFMETHOD_DECLARE_0(ZFUIPoint, p2_positionVelocityCur)
 
-    /** @brief see #P2World */
+    /** @brief see #p2_toLocal */
     ZFMETHOD_DECLARE_0(zffloat, p2_rotationCur)
-    /** @brief see #P2World */
+    /** @brief see #p2_toLocal */
     ZFMETHOD_DECLARE_0(zffloat, p2_rotationVelocityCur)
+
+    /**
+     * @brief transform from global to local of this body
+     *
+     * #P2Body can holds child body,and child body would be applied with parent body's transform
+     * when adding to physics world,
+     * you may use #p2_toLocal and #p2_toGlobal to calculate transform
+     *
+     * -  methods with local transform:
+     *   - #p2_position
+     *   - #p2_positionVelocity
+     *   - #p2_rotation
+     *   - #p2_rotationVelocity
+     *   - #p2_positionCurLocal
+     *   - #p2_positionVelocityCurLocal
+     *   - #p2_rotationCurLocal
+     *   - #p2_rotationVelocityCurLocal
+     *   - #p2_bodyScale
+     * -  methods with global transform:
+     *   - #p2_positionCur
+     *   - #p2_positionVelocityCur
+     *   - #p2_rotationCur
+     *   - #p2_rotationVelocityCur
+     *   - #p2_bodyScaleFixed
+     */
+    ZFMETHOD_DECLARE_2(void, p2_toLocal
+            , ZFMP_OUT(P2BodyTransform &, transformLocal)
+            , ZFMP_IN(const P2BodyTransform &, transformGlobal)
+            )
+    /** @brief see #p2_toLocal */
+    ZFMETHOD_DECLARE_2(void, p2_toGlobal
+            , ZFMP_OUT(P2BodyTransform &, transformGlobal)
+            , ZFMP_IN(const P2BodyTransform &, transformLocal)
+            )
+    /**
+     * @brief util method to obtain all parents' transforms,
+     *   including this body, ordered from this to root
+     *
+     * when no parent, only one element would return, which contains this body's transform
+     */
+    ZFMETHOD_DECLARE_0(ZFCoreArray<P2BodyTransform>, p2_transforms)
+
+    /**
+     * @brief see #P2World::p2_UIVisibleArea
+     *
+     * note: valid only for root body (bodies that added directly to #P2World::p2_body)
+     */
+    ZFMETHOD_DECLARE_0(zfbool, p2_bodyVisible)
 
 public:
     /** @brief see #P2World */
@@ -733,192 +920,88 @@ public:
             )
 
 public:
-    /** @brief see #P2World, whether impl has attached to world */
-    ZFMETHOD_DECLARE_0(zfbool, p2_implAttached)
-
-protected:
-    zfoverride
-    virtual void objectOnInit(void);
-    zfoverride
-    virtual void objectOnDealloc(void);
-
-public:
-    _ZFP_P2BodyPrivate *_ZFP_P2Body_d;
-};
-
-// ============================================================
-zfclassFwd _ZFP_P2ExtPrivate;
-/** @brief see #P2Unit::p2_ext */
-zfclass ZFLIB_ZFGameKit P2Ext : zfextend ZFStyle {
-    ZFOBJECT_DECLARE_WITH_CUSTOM_CTOR(P2Ext, ZFStyle)
-
-public:
-    /**
-     * @brief see #ZFObject::observerNotify
-     *
-     * called when attached to #P2Unit::p2_ext,
-     * param0 is the owner #P2Unit
-     */
-    ZFEVENT(P2ExtOnAttach)
-    /**
-     * @brief see #ZFObject::observerNotify
-     *
-     * called when detached from #P2Unit::p2_ext,
-     * param0 is the owner #P2Unit
-     */
-    ZFEVENT(P2ExtOnDetach)
-
-public:
-    /** @brief see #P2Unit::p2_ext */
-    ZFMETHOD_DECLARE_0(P2Unit *, p2_ownerUnit)
-
-protected:
-    /** @brief see #P2Ext::E_P2ExtOnAttach */
-    virtual void p2_extOnAttach(ZF_IN P2Unit *owner, ZF_IN_OUT zfbool &listenOnUpdate) {
-    }
-    /** @brief see #P2Ext::E_P2ExtOnDetach */
-    virtual void p2_extOnDetach(ZF_IN P2Unit *owner) {
-    }
-    /** @brief see #p2_extOnAttach, only called when listenOnUpdate set to true */
-    virtual void p2_extOnUpdate(ZF_IN P2Unit *owner) {
-    }
-
-private:
-    friend zfclassFwd _ZFP_P2ExtPrivate;
-    P2Unit *_ZFP_ownerUnit;
-protected:
-    /** @cond ZFPrivateDoc */
-    P2Ext(void) : _ZFP_ownerUnit(zfnull) {}
-    /** @endcond */
-};
-
-// ============================================================
-zfclassFwd _ZFP_P2UnitPrivate;
-/** @brief see #P2World */
-zfclass ZFLIB_ZFGameKit P2Unit : zfextend ZFStyle {
-    ZFOBJECT_DECLARE(P2Unit, ZFStyle)
-
-public:
-    /**
-     * @brief see #ZFObject::observerNotify
-     *
-     * called when unit visibility changed by #P2World::p2_UIVisibleArea,
-     * current visibility can be checked by #p2_unitVisible
-     */
-    ZFEVENT(P2VisibilityUpdate)
-
-    /**
-     * @brief see #ZFObject::observerNotify
-     *
-     * called when any child shape of this unit got #P2SensorEvent::p2_sensorEnterList,
-     * and this unit is the sensor\n
-     * param0 is the visitor #P2Unit
-     */
-    ZFEVENT(P2SensorEnter)
-    /**
-     * @brief see #ZFObject::observerNotify
-     *
-     * called when any child shape of this unit got #P2SensorEvent::p2_sensorExitList,
-     * and this unit is the sensor\n
-     * param0 is the visitor #P2Unit
-     */
-    ZFEVENT(P2SensorExit)
-    /**
-     * @brief see #ZFObject::observerNotify
-     *
-     * called when any child shape of this unit got #P2SensorEvent::p2_sensorEnterList,
-     * and this unit is the visitor\n
-     * param0 is the sensor #P2Unit
-     */
-    ZFEVENT(P2SensorVisitorEnter)
-    /**
-     * @brief see #ZFObject::observerNotify
-     *
-     * called when any child shape of this unit got #P2SensorEvent::p2_sensorExitList,
-     * and this unit is the visitor\n
-     * param0 is the sensor #P2Unit
-     */
-    ZFEVENT(P2SensorVisitorExit)
-
-    /**
-     * @brief see #ZFObject::observerNotify
-     *
-     * called before contact, to filter and prevent further contact,
-     * param0 is the other #P2Unit,
-     * param1 is the #P2ContactEventData
-     */
-    ZFEVENT(P2ContactFilter)
-    /**
-     * @brief see #ZFObject::observerNotify
-     *
-     * called when any child shape of this unit got #P2ContactEvent::p2_contactEnterList\n
-     * param0 is the other #P2Unit,
-     * param1 is the #P2ContactEventData
-     */
-    ZFEVENT(P2ContactEnter)
-    /**
-     * @brief see #ZFObject::observerNotify
-     *
-     * called when any child shape of this unit got #P2ContactEvent::p2_contactExitList\n
-     * param0 is the other #P2Unit,
-     * param1 is the #P2ContactEventData
-     */
-    ZFEVENT(P2ContactExit)
-
-    /**
-     * @brief see #ZFObject::observerNotify
-     *
-     * called during each simulation step, take care of performance
-     */
-    ZFEVENT(P2Update)
-
-public:
-    /** @brief see #P2World */
-    ZFMETHOD_DECLARE_0(P2World *, p2_ownerWorld)
-
-    /** @brief see #P2World */
-    ZFMETHOD_DECLARE_0(void, p2_removeFromParent)
-
-public:
-    /** @brief see #P2World */
-    ZFPROPERTY_ASSIGN(zfstring, p2_unitId)
-
-    /** @brief see #P2World, note changing scale is heavy task */
-    ZFPROPERTY_ASSIGN(zffloat, p2_unitScale, 1)
-    ZFPROPERTY_ON_UPDATE_DECLARE(zffloat, p2_unitScale)
-
-    /** @brief see #P2World */
-    ZFPROPERTY_RETAIN(zfanyT<P2Body>, p2_body)
-    ZFPROPERTY_ON_ATTACH_DECLARE(P2Body *, p2_body)
-    ZFPROPERTY_ON_DETACH_DECLARE(P2Body *, p2_body)
+    // ============================================================
+    // shape
     /** @brief see #P2World, must not manually modify */
-    ZFPROPERTY_RETAIN_READONLY(zfanyT<ZFArray>, p2_partList, zfobj<ZFArray>())
-    /** @brief see #P2World, must not manually modify */
-    ZFPROPERTY_RETAIN_READONLY(zfanyT<ZFArray>, p2_jointList, zfobj<ZFArray>())
-    /** @brief see #P2World, must not manually modify */
-    ZFPROPERTY_RETAIN_READONLY(zfanyT<ZFArray>, p2_extList, zfobj<ZFArray>())
-
-public:
+    ZFPROPERTY_RETAIN_READONLY(zfanyT<ZFArray>, p2_shapeList, zfobj<ZFArray>())
     /** @brief see #P2World */
-    ZFMETHOD_DECLARE_1(void, p2_part
+    ZFMETHOD_DECLARE_1(void, p2_shape
+            , ZFMP_IN(P2Shape *, v)
+            )
+    /** @brief see #P2World */
+    ZFMETHOD_DECLARE_0(zfindex, p2_shapeCount)
+    /** @brief see #P2World */
+    ZFMETHOD_DECLARE_1(P2Shape *, p2_shapeAt
+            , ZFMP_IN(zfindex, index)
+            )
+    /** @brief see #P2World */
+    ZFMETHOD_DECLARE_1(zfautoT<P2Shape>, p2_shapeRemoveAt
+            , ZFMP_IN(zfindex, index)
+            )
+    /** @brief see #P2World */
+    ZFMETHOD_DECLARE_1(zfautoT<P2Shape>, p2_shapeRemove
+            , ZFMP_IN(P2Shape *, v)
+            )
+    /** @brief see #P2World */
+    ZFMETHOD_DECLARE_0(void, p2_shapeRemoveAll)
+
+    /**
+     * @brief see #P2World, note this method is expensive
+     *
+     * recursively search in #p2_bodyList, breadth first, including this body\n
+     * shapeId can be:
+     * -  exact shapeId
+     * -  chained bodyId and shapeId: `bodyId1.bodyId3...shapeId`,
+     *   no need to specify all bodies of each depth
+     */
+    ZFMETHOD_DECLARE_1(P2Shape *, p2_shapeFind
+            , ZFMP_IN(const zfstring &, shapeId)
+            )
+
+    // ============================================================
+    // child body
+public:
+    /** @brief see #P2World, must not manually modify */
+    ZFPROPERTY_RETAIN_READONLY(zfanyT<ZFArray>, p2_bodyList, zfobj<ZFArray>())
+
+    /** @brief see #P2World */
+    ZFMETHOD_DECLARE_1(void, p2_body
             , ZFMP_IN(P2Body *, v)
             )
     /** @brief see #P2World */
-    ZFMETHOD_DECLARE_0(zfindex, p2_partCount)
+    ZFMETHOD_DECLARE_0(zfindex, p2_bodyCount)
     /** @brief see #P2World */
-    ZFMETHOD_DECLARE_1(P2Body *, p2_partAt
+    ZFMETHOD_DECLARE_1(P2Body *, p2_bodyAt
             , ZFMP_IN(zfindex, index)
             )
     /** @brief see #P2World */
-    ZFMETHOD_DECLARE_1(zfautoT<P2Body>, p2_partRemoveAt
+    ZFMETHOD_DECLARE_1(zfautoT<P2Body>, p2_bodyRemoveAt
             , ZFMP_IN(zfindex, index)
             )
     /** @brief see #P2World */
-    ZFMETHOD_DECLARE_1(zfautoT<P2Body>, p2_partRemove
-            , ZFMP_IN(P2Body *, part)
+    ZFMETHOD_DECLARE_1(zfautoT<P2Body>, p2_bodyRemove
+            , ZFMP_IN(P2Body *, v)
             )
     /** @brief see #P2World */
-    ZFMETHOD_DECLARE_0(void, p2_partRemoveAll)
+    ZFMETHOD_DECLARE_0(void, p2_bodyRemoveAll)
+    /**
+     * @brief see #P2World, note this method is expensive
+     *
+     * recursively search in #p2_bodyList, breadth first, including this body\n
+     * bodyId can be:
+     * -  exact bodyId
+     * -  chained bodyId: `bodyId1.bodyId3...`,
+     *   no need to specify all bodies of each depth
+     */
+    ZFMETHOD_DECLARE_1(P2Body *, p2_bodyFind
+            , ZFMP_IN(const zfstring &, bodyId)
+            )
+
+    // ============================================================
+    // body joint
+public:
+    /** @brief see #P2World, must not manually modify */
+    ZFPROPERTY_RETAIN_READONLY(zfanyT<ZFArray>, p2_jointList, zfobj<ZFArray>())
 
     /** @brief see #P2World */
     ZFMETHOD_DECLARE_1(void, p2_joint
@@ -936,28 +1019,41 @@ public:
             )
     /** @brief see #P2World */
     ZFMETHOD_DECLARE_1(zfautoT<P2Joint>, p2_jointRemove
-            , ZFMP_IN(P2Joint *, joint)
+            , ZFMP_IN(P2Joint *, v)
             )
     /** @brief see #P2World */
     ZFMETHOD_DECLARE_0(void, p2_jointRemoveAll)
-
-public:
-    /** @brief see #P2World, note this method is expensive */
-    ZFMETHOD_DECLARE_1(P2Body *, p2_bodyFind
-            , ZFMP_IN(const zfstring &, bodyId)
-            )
-    /** @brief see #P2World, note this method is expensive */
-    ZFMETHOD_DECLARE_1(P2Shape *, p2_shapeFind
-            , ZFMP_IN(const zfstring &, shapeId)
-            )
-    /** @brief see #P2World, note this method is expensive */
+    /**
+     * @brief see #P2World, note this method is expensive
+     *
+     * recursively search in #p2_jointList and all of #p2_bodyList, breadth first\n
+     * jointId can be:
+     * -  exact jointId
+     * -  chained bodyId and jointId: `bodyId1.bodyId3...jointId`,
+     *   no need to specify all bodies of each depth
+     */
     ZFMETHOD_DECLARE_1(P2Joint *, p2_jointFind
             , ZFMP_IN(const zfstring &, jointId)
             )
 
-public:
     /**
-     * @brief attach extension for this unit
+     * @brief see #P2World
+     *
+     * all joints that referenced this body,
+     * including joints in #P2Body::p2_jointList and #P2World::p2_jointList
+     * must not manually modify,
+     * valid only after added to world and first time updated
+     */
+    ZFMETHOD_DECLARE_0(ZFArray *, p2_refJointList)
+
+    // ============================================================
+    // body ext
+public:
+    /** @brief see #P2World, must not manually modify */
+    ZFPROPERTY_RETAIN_READONLY(zfanyT<ZFArray>, p2_extList, zfobj<ZFArray>())
+
+    /**
+     * @brief attach extension for this body
      */
     ZFMETHOD_DECLARE_1(void, p2_ext
             , ZFMP_IN(P2Ext *, v)
@@ -979,7 +1075,7 @@ public:
     /** @brief see #p2_ext */
     ZFMETHOD_DECLARE_0(void, p2_extRemoveAll)
     /** @brief see #p2_ext */
-    ZFMETHOD_DECLARE_1(zfindex, p2_extFind
+    ZFMETHOD_DECLARE_1(zfindex, p2_extCheck
             , ZFMP_IN(const ZFClass *, extCls)
             )
     /** @brief see #p2_ext */
@@ -988,18 +1084,8 @@ public:
             )
 
 public:
-    /**
-     * @brief see #P2World
-     *
-     * all joints in owner world that referenced this unit's body or parts,
-     * not including the #p2_jointList inside this unit,
-     * must not manually modify,
-     * valid only after added to world and first time updated
-     */
-    ZFMETHOD_DECLARE_0(ZFArray *, p2_refJointList)
-
-    /** @brief see #P2World::p2_UIVisibleArea */
-    ZFMETHOD_DECLARE_0(zfbool, p2_unitVisible)
+    /** @brief see #P2World, whether impl has attached to world */
+    ZFMETHOD_DECLARE_0(zfbool, p2_implAttached)
 
 protected:
     zfoverride
@@ -1012,18 +1098,18 @@ protected:
     virtual void observerOnRemove(ZF_IN zfidentity eventId);
 
 public:
-    _ZFP_P2UnitPrivate *_ZFP_P2Unit_d;
+    _ZFP_P2BodyPrivate *_ZFP_P2Body_d;
 };
 
 // ============================================================
 /** @brief see #P2World */
-zfclass ZFLIB_ZFGameKit P2UnitVisibilityEvent : zfextend ZFObject {
-    ZFOBJECT_DECLARE(P2UnitVisibilityEvent, ZFObject)
+zfclass ZFLIB_ZFGameKit P2BodyVisibilityEvent : zfextend ZFObject {
+    ZFOBJECT_DECLARE(P2BodyVisibilityEvent, ZFObject)
 public:
     /** @brief see #P2World */
-    ZFCoreArray<P2Unit *> p2_unitEnterList;
+    ZFCoreArray<P2Body *> p2_bodyEnterList;
     /** @brief see #P2World */
-    ZFCoreArray<P2Unit *> p2_unitExitList;
+    ZFCoreArray<P2Body *> p2_bodyExitList;
 };
 
 /** @brief see #P2World */
@@ -1083,14 +1169,14 @@ public:
     /**
      * @brief contact normal vector from p2_shape0 to p2_shape1
      *
-     * for #P2ContactEvent::p2_contactEnterList and #P2Unit::E_P2ContactFilter only
+     * for #P2ContactEvent::p2_contactEnterList and #P2Body::E_P2ContactFilter only
      */
     ZFUIPoint p2_normal;
 
     /**
      * @brief whether enable contact, true by default
      *
-     * for #P2Unit::E_P2ContactFilter only
+     * for #P2Body::E_P2ContactFilter only
      */
     zfbool p2_contactEnable;
 };
@@ -1137,15 +1223,13 @@ zfclassFwd _ZFP_P2WorldPrivate;
  *
  * main classes:
  * -  #P2World : manage the physics world
- * -  #P2Unit : a group of body, to simulate player or enemy or other unit,
- *   it must have exact one main body, and optionally one or more body parts,
- *   and usually all parts should be connected by joints,
- *   explicitly or implicitly to the main body
- * -  #P2Body : base physics body, one body usually should have one or more shapes
+ * -  #P2Body : base physics body, one body usually should have one or more shapes,
+ *   a body can have child bodies and joints,
+ *   child bodies' position and rotation would be relative to its parent body
  * -  #P2Shape : base shape
  * -  #P2Joint : joint to connect two bodies, it can:
- *   belong to #P2World (to control two logical unit in world),
- *   or belong to #P2Unit (to describe connection within one logical unit)
+ *   belong to #P2World (to control two bodies in world which not belongs to same root body),
+ *   or belong to #P2Body (to describe connection within the same root body)
  *
  * you can use #P2World in two different way:
  * -  create a #P2World, then implement #P2World::p2impl,
@@ -1168,18 +1252,6 @@ zfclass ZFLIB_ZFGameKit P2World : zfextend ZFStyle {
     ZFOBJECT_DECLARE(P2World, ZFStyle)
 
 public:
-    /**
-     * @brief see #ZFObject::observerNotify
-     *
-     * called when unit attached, param0 is the #P2Unit
-     */
-    ZFEVENT(P2UnitAttach)
-    /**
-     * @brief see #ZFObject::observerNotify
-     *
-     * called when unit detached, param0 is the #P2Unit
-     */
-    ZFEVENT(P2UnitDetach)
     /**
      * @brief see #ZFObject::observerNotify
      *
@@ -1220,10 +1292,10 @@ public:
     /**
      * @brief see #ZFObject::observerNotify
      *
-     * called when any child unit's visibility changed during each simulation step,
-     * param0 is #P2UnitVisibilityEvent
+     * called when any root body's visibility changed during each simulation step,
+     * param0 is #P2BodyVisibilityEvent
      */
-    ZFEVENT(P2UnitVisibilityEvent)
+    ZFEVENT(P2BodyVisibilityEvent)
     /**
      * @brief see #ZFObject::observerNotify
      *
@@ -1265,7 +1337,7 @@ public:
     /** @brief see #P2World, in P2's size unit */
     ZFPROPERTY_ASSIGN(ZFUISize, p2_UISize)
     ZFPROPERTY_ON_UPDATE_DECLARE(ZFUISize, p2_UISize)
-    /** @brief see #P2World, `scale = UI_size_unit / P2_size_unit` */
+    /** @brief see #P2World, `p2_UIScale = UI_size_unit / P2_size_unit` */
     ZFPROPERTY_ASSIGN(zffloat, p2_UIScale, 50)
     ZFPROPERTY_ON_UPDATE_DECLARE(zffloat, p2_UIScale)
     /**
@@ -1311,41 +1383,60 @@ public:
 
 public:
     /** @brief see #P2World, must not manually modify */
-    ZFPROPERTY_RETAIN_READONLY(zfanyT<ZFArray>, p2_unitList, zfobj<ZFArray>())
-    /** @brief see #P2World */
-    ZFMETHOD_DECLARE_1(void, p2_unit
-            , ZFMP_IN(ZFObject *, unitOrBody)
-            )
-    /** @brief see #P2World */
-    ZFMETHOD_DECLARE_0(zfindex, p2_unitCount)
-    /** @brief see #P2World */
-    ZFMETHOD_DECLARE_1(P2Unit *, p2_unitAt
-            , ZFMP_IN(zfindex, index)
-            )
-    /** @brief see #P2World */
-    ZFMETHOD_DECLARE_1(zfautoT<P2Unit>, p2_unitRemoveAt
-            , ZFMP_IN(zfindex, index)
-            )
-    /** @brief see #P2World */
-    ZFMETHOD_DECLARE_1(zfautoT<P2Unit>, p2_unitRemove
-            , ZFMP_IN(P2Unit *, unit)
-            )
-    /** @brief see #P2World */
-    ZFMETHOD_DECLARE_0(void, p2_unitRemoveAll)
+    ZFPROPERTY_RETAIN_READONLY(zfanyT<ZFArray>, p2_bodyList, zfobj<ZFArray>())
 
+    /** @brief see #P2World */
+    ZFMETHOD_DECLARE_1(void, p2_body
+            , ZFMP_IN(P2Body *, v)
+            )
+    /** @brief see #P2World */
+    ZFMETHOD_DECLARE_0(zfindex, p2_bodyCount)
+    /** @brief see #P2World */
+    ZFMETHOD_DECLARE_1(P2Body *, p2_bodyAt
+            , ZFMP_IN(zfindex, index)
+            )
+    /** @brief see #P2World */
+    ZFMETHOD_DECLARE_1(zfautoT<P2Body>, p2_bodyRemoveAt
+            , ZFMP_IN(zfindex, index)
+            )
+    /** @brief see #P2World */
+    ZFMETHOD_DECLARE_1(zfautoT<P2Body>, p2_bodyRemove
+            , ZFMP_IN(P2Body *, v)
+            )
+    /** @brief see #P2World */
+    ZFMETHOD_DECLARE_0(void, p2_bodyRemoveAll)
+    /**
+     * @brief see #P2World, note this method is expensive
+     *
+     * recursively search in #p2_bodyList, breadth first\n
+     * bodyId can be:
+     * -  exact bodyId
+     * -  chained bodyId: `bodyId1.bodyId3...`,
+     *   no need to specify all bodies of each depth
+     */
+    ZFMETHOD_DECLARE_1(P2Body *, p2_bodyFind
+            , ZFMP_IN(const zfstring &, bodyId)
+            )
+    /**
+     * @brief see #P2World, note this method is expensive
+     *
+     * recursively search in #p2_bodyList, breadth first\n
+     * shapeId can be:
+     * -  exact shapeId
+     * -  chained bodyId and shapeId: `bodyId1.bodyId3...shapeId`,
+     *   no need to specify all bodies of each depth
+     */
+    ZFMETHOD_DECLARE_1(P2Shape *, p2_shapeFind
+            , ZFMP_IN(const zfstring &, shapeId)
+            )
+
+public:
     /** @brief see #P2World, must not manually modify */
     ZFPROPERTY_RETAIN_READONLY(zfanyT<ZFArray>, p2_jointList, zfobj<ZFArray>())
-    /**
-     * @brief see #P2World
-     *
-     * note, when adding joint to world (instead of adding to #P2Unit::p2_joint),
-     * #P2Joint::p2_jointId can be:
-     * -  `bodyId` : you should ensure the bodyId is unique in the world
-     * -  `unitId.bodyId` : first find by `unitId`, then find inside the unit by `bodyId`,
-     *   this is the recommended way to improve searching performance
-     */
+
+    /** @brief see #P2World */
     ZFMETHOD_DECLARE_1(void, p2_joint
-            , ZFMP_IN(P2Joint *, joint)
+            , ZFMP_IN(P2Joint *, v)
             )
     /** @brief see #P2World */
     ZFMETHOD_DECLARE_0(zfindex, p2_jointCount)
@@ -1359,25 +1450,19 @@ public:
             )
     /** @brief see #P2World */
     ZFMETHOD_DECLARE_1(zfautoT<P2Joint>, p2_jointRemove
-            , ZFMP_IN(P2Joint *, joint)
+            , ZFMP_IN(P2Joint *, v)
             )
     /** @brief see #P2World */
     ZFMETHOD_DECLARE_0(void, p2_jointRemoveAll)
-
-public:
-    /** @brief see #P2World, note this method is expensive */
-    ZFMETHOD_DECLARE_1(P2Unit *, p2_unitFind
-            , ZFMP_IN(const zfstring &, unitId)
-            )
-    /** @brief see #P2World, note this method is expensive */
-    ZFMETHOD_DECLARE_1(P2Body *, p2_bodyFind
-            , ZFMP_IN(const zfstring &, bodyId)
-            )
-    /** @brief see #P2World, note this method is expensive */
-    ZFMETHOD_DECLARE_1(P2Shape *, p2_shapeFind
-            , ZFMP_IN(const zfstring &, shapeId)
-            )
-    /** @brief see #P2World, note this method is expensive */
+    /**
+     * @brief see #P2World, note this method is expensive
+     *
+     * recursively search in #P2World::p2_jointList and #P2Body::p2_jointFind, breadth first\n
+     * jointId can be:
+     * -  exact jointId
+     * -  chained bodyId and jointId: `bodyId1.bodyId3...shapeId`,
+     *   no need to specify all bodies of each depth
+     */
     ZFMETHOD_DECLARE_1(P2Joint *, p2_jointFind
             , ZFMP_IN(const zfstring &, jointId)
             )
@@ -1434,20 +1519,6 @@ protected:
 public:
     _ZFP_P2WorldPrivate *_ZFP_P2World_d;
 };
-
-// ============================================================
-/** @brief see #P2World */
-ZFMETHOD_FUNC_DECLARE_3(ZFLIB_ZFGameKit, ZFUIPoint, P2LocalFromWorld
-        , ZFMP_IN(const ZFUIPoint &, relPosition)
-        , ZFMP_IN(zffloat, relRotation)
-        , ZFMP_IN(ZFUIPoint, worldPosition)
-        )
-/** @brief see #P2World */
-ZFMETHOD_FUNC_DECLARE_3(ZFLIB_ZFGameKit, ZFUIPoint, P2LocalToWorld
-        , ZFMP_IN(const ZFUIPoint &, relPosition)
-        , ZFMP_IN(zffloat, relRotation)
-        , ZFMP_IN(ZFUIPoint, localPosition)
-        )
 
 ZF_NAMESPACE_GLOBAL_END
 #endif // #ifndef _ZFI_P2World_h_

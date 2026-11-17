@@ -40,7 +40,7 @@ public:
         ZFUIView *bodyView = zfcast(ZFUIView *, body);
         if(bodyView) {
             container->child(bodyView);
-            _bodyPosUpdate(body, bodyView, body->p2_position(), body->p2_rotation());
+            _bodyPosUpdate(body, bodyView, body->p2_positionCur(), body->p2_rotationCur());
         }
     }
     zfoverride
@@ -118,16 +118,16 @@ public:
     }
 private:
     void _bodyPosUpdate(ZF_IN P2Body *body, ZF_IN ZFUIView *bodyView, ZF_IN const ZFUIPoint &position, ZF_IN zffloat rotation) {
-        bodyView->UIScale(body->p2_ownerUnit()->p2_unitScale());
+        zffloat bodyScale = body->p2_bodyScaleFixed();
         bodyView->rotateZ(rotation);
         bodyView->viewFrame(P2UIRectFromBody(
                     worldView->height()
                     , world->p2_UIScale()
                     , world->p2_UIOffset()
                     , position
-                    , body->p2_AABBLocal()
+                    , ZFUIRectApplyScale(body->p2_AABBLocal(), bodyScale)
                     , rotation
-                    , body->p2_centerOfMass()
+                    , ZFUIPointApplyScale(body->p2_centerOfMass(), bodyScale)
                     ));
     }
 };
