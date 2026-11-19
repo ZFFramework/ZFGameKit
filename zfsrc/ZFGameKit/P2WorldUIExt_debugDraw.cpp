@@ -2,6 +2,9 @@
 
 ZF_NAMESPACE_GLOBAL_BEGIN
 
+#define _ZFP_P2DebugDraw_MassCenterSize 10.0f
+#define _ZFP_P2DebugDraw_JointSize 5.0f
+
 zfclass _ZFP_I_P2DebugDrawBody : zfextend ZFUIView {
     ZFOBJECT_DECLARE_WITH_CUSTOM_CTOR(_ZFP_I_P2DebugDrawBody, ZFUIView)
 public:
@@ -97,7 +100,6 @@ public:
             v = t;
             body->objectTag(zftext("_ZFP_P2DebugDraw_body"), v);
             zfcast(ZFUIView *, body)->internalFgView(v)->sizeFill();
-            v->bgColor(ZFUIColorRandom(0.1f));
         }
         else {
             if(v->p2_UIScale == world->p2_UIScale()
@@ -106,6 +108,7 @@ public:
                 return;
             }
         }
+        v->bgColor(ZFUIColorRandom(0.1f));
 
         zffloat s = world->p2_UIScale();
         v->p2_UIScale = s;
@@ -119,19 +122,20 @@ public:
             }
             while(v->shapeDebugList.count() < shapeList->count()) {
                 zfobj<_ZFP_I_P2DebugDrawShape> sv;
-                sv->bgColor(ZFUIColorRandom(0.4f));
                 v->child(sv);
                 v->shapeDebugList.add(sv);
             }
             for(zfindex i = 0; i < shapeList->count(); ++i) {
                 P2Shape *shape = shapeList->get(i);
                 ZFUIRect shapeAABB = ZFUIRectApplyScale(shape->p2_AABBLocal(), v->p2_bodyScaleFixed);
-                v->shapeDebugList[i]->viewFrame(ZFUIRectCreate(
+                ZFUIView *sv = v->shapeDebugList[i];
+                sv->c_viewFrame(ZFUIRectCreate(
                             (shapeAABB.x - bodyAABB.x) * s
                             , (bodyAABB.y + bodyAABB.height - (shapeAABB.y + shapeAABB.height)) * s
                             , shapeAABB.width * s
                             , shapeAABB.height * s
                             ));
+                sv->bgColor(ZFUIColorRandom(0.4f));
             }
         }
 
@@ -139,16 +143,15 @@ public:
             if(!v->massCenterDebug) {
                 zfobj<_ZFP_I_P2DebugDrawBodyCenter> sv;
                 v->massCenterDebug = sv;
-                sv->bgColor(ZFUIColorRandom(0.8f));
                 v->internalFgView(sv);
             }
-            ZFUIPoint centerOfMass = ZFUIPointApplyScale(body->p2_centerOfMass(), v->p2_bodyScaleFixed);
-            zffloat size = 4;
+            v->massCenterDebug->bgColor(ZFUIColorRandom(0.8f));
+            ZFUIPoint massCenter = ZFUIPointApplyScale(body->p2_massCenter(), v->p2_bodyScaleFixed);
             v->massCenterDebug->viewFrame(ZFUIRectCreate(
-                        (centerOfMass.x - bodyAABB.x) * s - size / 2
-                        , (bodyAABB.y + bodyAABB.height - centerOfMass.y) * s - size / 2
-                        , size
-                        , size
+                        (massCenter.x - bodyAABB.x) * s - _ZFP_P2DebugDraw_MassCenterSize / 2
+                        , (bodyAABB.y + bodyAABB.height - massCenter.y) * s - _ZFP_P2DebugDraw_MassCenterSize / 2
+                        , _ZFP_P2DebugDraw_MassCenterSize
+                        , _ZFP_P2DebugDraw_MassCenterSize
                         ));
         }
     }
@@ -176,18 +179,12 @@ public:
             v = t;
             joint->objectTag(zftext("_ZFP_P2DebugDraw_joint"), v);
             d->internalFgView(v)->sizeFill();
-            v->bgColor(ZFUIColorRandom(0.4f));
         }
-        ZFUIPoint pos0 = ZFUIPointDec(
-                joint->p2_ownerBody0()->p2_positionCur()
-                , ZFUIPointApplyScale(joint->p2_ownerBody0()->p2_centerOfMass(), joint->p2_ownerBody0()->p2_bodyScaleFixed())
-                );
-        ZFUIPoint pos1 = ZFUIPointDec(
-                joint->p2_ownerBody1()->p2_positionCur()
-                , ZFUIPointApplyScale(joint->p2_ownerBody1()->p2_centerOfMass(), joint->p2_ownerBody1()->p2_bodyScaleFixed())
-                );
+        v->bgColor(ZFUIColorRandom(0.4f));
+        ZFUIPoint pos0 = joint->p2_ownerBody0()->p2_positionCur();
+        ZFUIPoint pos1 = joint->p2_ownerBody1()->p2_positionCur();
         zffloat w = (zffloat)zfm_sqrt(zfm_pow(pos1.x - pos0.x, 2) + zfm_pow(pos1.y - pos0.y, 2));
-        zffloat h = 2 / world->p2_UIScale();
+        zffloat h = _ZFP_P2DebugDraw_JointSize / world->p2_UIScale();
         zffloat x = (pos0.x + pos1.x) / 2;
         zffloat y = (pos0.y + pos1.y) / 2;
         v->viewFrame(P2UIRectFromAABB(world, ZFUIRectCreate(

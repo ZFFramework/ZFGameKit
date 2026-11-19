@@ -233,7 +233,7 @@ public:
     P2Body *ownerBody;
     zfobj<ZFArray> bodyRefJointList;
     ZFUIRect bodyAABBLocal; // relative to origin point of body
-    ZFUIPoint centerOfMass; // relative to origin point of body
+    ZFUIPoint massCenter; // relative to origin point of body
 
     enum {
         stateFlag_bodyPosUpdateRequested = 1 << 0,
@@ -258,7 +258,7 @@ public:
     , ownerWorld(zfnull)
     , ownerBody(zfnull)
     , bodyRefJointList()
-    , centerOfMass()
+    , massCenter()
     , stateFlag(0
             | stateFlag_bodyPosUpdateRequested
             | stateFlag_bodyScaleUpdateRequested
@@ -283,7 +283,7 @@ public:
         ZFBitUnset(this->stateFlag, stateFlag_bodyPosUpdateRequested);
         if(B2_IS_NULL(this->implBodyId)) {
             this->bodyAABBLocal = ZFUIRectZero();
-            this->centerOfMass = ZFUIPointZero();
+            this->massCenter = ZFUIPointZero();
         }
         else {
             P2Body *body = (P2Body *)b2Body_GetUserData(this->implBodyId);
@@ -296,7 +296,7 @@ public:
                 }
             }
 
-            this->centerOfMass = ZFUIPointApplyScaleReversely(
+            this->massCenter = ZFUIPointApplyScaleReversely(
                     b2Vec2ToZF(b2Body_GetLocalCenterOfMass(this->implBodyId))
                     , body->p2_bodyScaleFixed()
                     );
@@ -304,7 +304,7 @@ public:
     }
     void massUpdate(void) {
         if(ZFBitTest(stateFlag, stateFlag_massUpdateRequested)) {
-            // updating mass may modify linearVelocity (because of centerOfMass changed)
+            // updating mass may modify linearVelocity (because of massCenter changed)
             b2Vec2 t = b2Body_GetLinearVelocity(this->implBodyId);
             b2Body_ApplyMassFromShapes(this->implBodyId);
             b2Body_SetLinearVelocity(this->implBodyId, t);
@@ -378,6 +378,26 @@ public:
         zfobjRelease(contactEvent);
         zfobjRelease(sensorEvent);
         zfobjRelease(bodyMoveEvent);
+    }
+
+public:
+    static void bodyTreeAttach(ZF_IN P2World *world, ZF_IN P2Body *body) {
+        ZFCoreQueuePOD<P2Body *> toUpdate;
+        toUpdate.add(body);
+        while(!toUpdate.isEmpty()) {
+            body = toUpdate.take();
+            {
+                ZFArray *l = body->p2_bodyList();
+                for(zfindex i = l->count() - 1; i != zfindexMax(); --i) {
+                    toUpdate.add(l->get(i));
+                }
+            }
+            world->_ZFP_P2World_d->pendingBody[body] = zftrue;
+            ZFArray *l = body->p2_jointList();
+            for(zfindex i = l->count() - 1; i != zfindexMax(); --i) {
+                world->_ZFP_P2World_d->pendingJoint[l->get(i)] = zftrue;
+            }
+        }
     }
 };
 
@@ -1042,12 +1062,12 @@ ZFOBJECT_REGISTER(P2JointDistance)
 
 ZFPROPERTY_ON_UPDATE_DEFINE(P2JointDistance, ZFUIPoint, p2_anchor0) {
     if(B2_IS_NON_NULL(_ZFP_P2Joint_d->implJointId)) {
-        b2Joint_SetLocalAnchorA(_ZFP_P2Joint_d->implJointId, b2Vec2FromZF(ZFUIPointApplyScale(propertyValue, this->p2_ownerBody0()->p2_bodyScaleFixed())));
+        b2Joint_SetLocalAnchorA(_ZFP_P2Joint_d->implJointId, b2Vec2FromZF(ZFUIPointApplyScale(propertyValue, this->p2_ownerBody0()->p2_bodyScaleInherit())));
     }
 }
 ZFPROPERTY_ON_UPDATE_DEFINE(P2JointDistance, ZFUIPoint, p2_anchor1) {
     if(B2_IS_NON_NULL(_ZFP_P2Joint_d->implJointId)) {
-        b2Joint_SetLocalAnchorA(_ZFP_P2Joint_d->implJointId, b2Vec2FromZF(ZFUIPointApplyScale(propertyValue, this->p2_ownerBody1()->p2_bodyScaleFixed())));
+        b2Joint_SetLocalAnchorA(_ZFP_P2Joint_d->implJointId, b2Vec2FromZF(ZFUIPointApplyScale(propertyValue, this->p2_ownerBody1()->p2_bodyScaleInherit())));
     }
 }
 ZFPROPERTY_ON_UPDATE_DEFINE(P2JointDistance, zffloat, p2_springHertz) {
@@ -1064,13 +1084,15 @@ ZFPROPERTY_ON_UPDATE_DEFINE(P2JointDistance, zffloat, p2_springDamping) {
 }
 ZFPROPERTY_ON_UPDATE_DEFINE(P2JointDistance, zffloat, p2_motorSpeed) {
     if(B2_IS_NON_NULL(_ZFP_P2Joint_d->implJointId)) {
-        b2DistanceJoint_SetMotorSpeed(_ZFP_P2Joint_d->implJointId, propertyValue * _ZFP_P2JointPrivate::jointScale(this));
+        zffloat jointScale = _ZFP_P2JointPrivate::jointScale(this);
+        b2DistanceJoint_SetMotorSpeed(_ZFP_P2Joint_d->implJointId, propertyValue * jointScale);
         b2DistanceJoint_EnableMotor(_ZFP_P2Joint_d->implJointId, this->p2_motorSpeed() > 0 && this->p2_motorForce() > 0);
     }
 }
 ZFPROPERTY_ON_UPDATE_DEFINE(P2JointDistance, zffloat, p2_motorForce) {
     if(B2_IS_NON_NULL(_ZFP_P2Joint_d->implJointId)) {
-        b2DistanceJoint_SetMaxMotorForce(_ZFP_P2Joint_d->implJointId, propertyValue * _ZFP_P2JointPrivate::jointScale(this));
+        zffloat jointScale = _ZFP_P2JointPrivate::jointScale(this);
+        b2DistanceJoint_SetMaxMotorForce(_ZFP_P2Joint_d->implJointId, propertyValue * jointScale * jointScale);
         b2DistanceJoint_EnableMotor(_ZFP_P2Joint_d->implJointId, this->p2_motorSpeed() > 0 && this->p2_motorForce() > 0);
     }
 }
@@ -1148,8 +1170,8 @@ void P2JointDistance::p2impl_jointCreate(ZF_IN P2Body *ownerBody0, ZF_IN P2Body 
     implJointDef.bodyIdA = ownerBody0->_ZFP_P2Body_d->implBodyId;
     implJointDef.bodyIdB = ownerBody1->_ZFP_P2Body_d->implBodyId;
     implJointDef.collideConnected = this->p2_contactEnable();
-    implJointDef.localAnchorA = b2Vec2FromZF(ZFUIPointApplyScale(this->p2_anchor0(), ownerBody0->p2_bodyScaleFixed()));
-    implJointDef.localAnchorB = b2Vec2FromZF(ZFUIPointApplyScale(this->p2_anchor1(), ownerBody1->p2_bodyScaleFixed()));
+    implJointDef.localAnchorA = b2Vec2FromZF(ZFUIPointApplyScale(this->p2_anchor0(), ownerBody0->p2_bodyScaleInherit()));
+    implJointDef.localAnchorB = b2Vec2FromZF(ZFUIPointApplyScale(this->p2_anchor1(), ownerBody1->p2_bodyScaleInherit()));
     if(this->p2_springHertz() > 0 && this->p2_springDamping() > 0) {
         implJointDef.enableSpring = zftrue;
         implJointDef.hertz = this->p2_springHertz();
@@ -1195,12 +1217,12 @@ ZFOBJECT_REGISTER(P2JointRevolute)
 
 ZFPROPERTY_ON_UPDATE_DEFINE(P2JointRevolute, ZFUIPoint, p2_anchor0) {
     if(B2_IS_NON_NULL(_ZFP_P2Joint_d->implJointId)) {
-        b2Joint_SetLocalAnchorA(_ZFP_P2Joint_d->implJointId, b2Vec2FromZF(ZFUIPointApplyScale(propertyValue, this->p2_ownerBody0()->p2_bodyScaleFixed())));
+        b2Joint_SetLocalAnchorA(_ZFP_P2Joint_d->implJointId, b2Vec2FromZF(ZFUIPointApplyScale(propertyValue, this->p2_ownerBody0()->p2_bodyScaleInherit())));
     }
 }
 ZFPROPERTY_ON_UPDATE_DEFINE(P2JointRevolute, ZFUIPoint, p2_anchor1) {
     if(B2_IS_NON_NULL(_ZFP_P2Joint_d->implJointId)) {
-        b2Joint_SetLocalAnchorA(_ZFP_P2Joint_d->implJointId, b2Vec2FromZF(ZFUIPointApplyScale(propertyValue, this->p2_ownerBody1()->p2_bodyScaleFixed())));
+        b2Joint_SetLocalAnchorA(_ZFP_P2Joint_d->implJointId, b2Vec2FromZF(ZFUIPointApplyScale(propertyValue, this->p2_ownerBody1()->p2_bodyScaleInherit())));
     }
 }
 ZFPROPERTY_ON_UPDATE_DEFINE(P2JointRevolute, zffloat, p2_springHertz) {
@@ -1217,13 +1239,15 @@ ZFPROPERTY_ON_UPDATE_DEFINE(P2JointRevolute, zffloat, p2_springDamping) {
 }
 ZFPROPERTY_ON_UPDATE_DEFINE(P2JointRevolute, zffloat, p2_motorSpeed) {
     if(B2_IS_NON_NULL(_ZFP_P2Joint_d->implJointId)) {
-        b2RevoluteJoint_SetMotorSpeed(_ZFP_P2Joint_d->implJointId, propertyValue * _ZFP_P2JointPrivate::jointScale(this));
+        zffloat jointScale = _ZFP_P2JointPrivate::jointScale(this);
+        b2RevoluteJoint_SetMotorSpeed(_ZFP_P2Joint_d->implJointId, propertyValue * jointScale);
         b2RevoluteJoint_EnableMotor(_ZFP_P2Joint_d->implJointId, this->p2_motorSpeed() > 0 && this->p2_motorForce() > 0);
     }
 }
 ZFPROPERTY_ON_UPDATE_DEFINE(P2JointRevolute, zffloat, p2_motorForce) {
     if(B2_IS_NON_NULL(_ZFP_P2Joint_d->implJointId)) {
-        b2RevoluteJoint_SetMaxMotorTorque(_ZFP_P2Joint_d->implJointId, propertyValue * _ZFP_P2JointPrivate::jointScale(this));
+        zffloat jointScale = _ZFP_P2JointPrivate::jointScale(this);
+        b2RevoluteJoint_SetMaxMotorTorque(_ZFP_P2Joint_d->implJointId, propertyValue * jointScale * jointScale);
         b2RevoluteJoint_EnableMotor(_ZFP_P2Joint_d->implJointId, this->p2_motorSpeed() > 0 && this->p2_motorForce() > 0);
     }
 }
@@ -1300,8 +1324,8 @@ void P2JointRevolute::p2impl_jointCreate(ZF_IN P2Body *ownerBody0, ZF_IN P2Body 
     implJointDef.bodyIdA = ownerBody0->_ZFP_P2Body_d->implBodyId;
     implJointDef.bodyIdB = ownerBody1->_ZFP_P2Body_d->implBodyId;
     implJointDef.collideConnected = this->p2_contactEnable();
-    implJointDef.localAnchorA = b2Vec2FromZF(ZFUIPointApplyScale(this->p2_anchor0(), ownerBody0->p2_bodyScaleFixed()));
-    implJointDef.localAnchorB = b2Vec2FromZF(ZFUIPointApplyScale(this->p2_anchor1(), ownerBody1->p2_bodyScaleFixed()));
+    implJointDef.localAnchorA = b2Vec2FromZF(ZFUIPointApplyScale(this->p2_anchor0(), ownerBody0->p2_bodyScaleInherit()));
+    implJointDef.localAnchorB = b2Vec2FromZF(ZFUIPointApplyScale(this->p2_anchor1(), ownerBody1->p2_bodyScaleInherit()));
     if(this->p2_springHertz() > 0 && this->p2_springDamping() > 0) {
         implJointDef.enableSpring = zftrue;
         implJointDef.hertz = this->p2_springHertz();
@@ -1344,12 +1368,12 @@ ZFOBJECT_REGISTER(P2JointPrismatic)
 
 ZFPROPERTY_ON_UPDATE_DEFINE(P2JointPrismatic, ZFUIPoint, p2_anchor0) {
     if(B2_IS_NON_NULL(_ZFP_P2Joint_d->implJointId)) {
-        b2Joint_SetLocalAnchorA(_ZFP_P2Joint_d->implJointId, b2Vec2FromZF(ZFUIPointApplyScale(propertyValue, this->p2_ownerBody0()->p2_bodyScaleFixed())));
+        b2Joint_SetLocalAnchorA(_ZFP_P2Joint_d->implJointId, b2Vec2FromZF(ZFUIPointApplyScale(propertyValue, this->p2_ownerBody0()->p2_bodyScaleInherit())));
     }
 }
 ZFPROPERTY_ON_UPDATE_DEFINE(P2JointPrismatic, ZFUIPoint, p2_anchor1) {
     if(B2_IS_NON_NULL(_ZFP_P2Joint_d->implJointId)) {
-        b2Joint_SetLocalAnchorA(_ZFP_P2Joint_d->implJointId, b2Vec2FromZF(ZFUIPointApplyScale(propertyValue, this->p2_ownerBody1()->p2_bodyScaleFixed())));
+        b2Joint_SetLocalAnchorA(_ZFP_P2Joint_d->implJointId, b2Vec2FromZF(ZFUIPointApplyScale(propertyValue, this->p2_ownerBody1()->p2_bodyScaleInherit())));
     }
 }
 ZFPROPERTY_ON_UPDATE_DEFINE(P2JointPrismatic, zffloat, p2_springHertz) {
@@ -1366,13 +1390,15 @@ ZFPROPERTY_ON_UPDATE_DEFINE(P2JointPrismatic, zffloat, p2_springDamping) {
 }
 ZFPROPERTY_ON_UPDATE_DEFINE(P2JointPrismatic, zffloat, p2_motorSpeed) {
     if(B2_IS_NON_NULL(_ZFP_P2Joint_d->implJointId)) {
-        b2PrismaticJoint_SetMotorSpeed(_ZFP_P2Joint_d->implJointId, propertyValue * _ZFP_P2JointPrivate::jointScale(this));
+        zffloat jointScale = _ZFP_P2JointPrivate::jointScale(this);
+        b2PrismaticJoint_SetMotorSpeed(_ZFP_P2Joint_d->implJointId, propertyValue * jointScale);
         b2PrismaticJoint_EnableMotor(_ZFP_P2Joint_d->implJointId, this->p2_motorSpeed() > 0 && this->p2_motorForce() > 0);
     }
 }
 ZFPROPERTY_ON_UPDATE_DEFINE(P2JointPrismatic, zffloat, p2_motorForce) {
     if(B2_IS_NON_NULL(_ZFP_P2Joint_d->implJointId)) {
-        b2PrismaticJoint_SetMaxMotorForce(_ZFP_P2Joint_d->implJointId, propertyValue * _ZFP_P2JointPrivate::jointScale(this));
+        zffloat jointScale = _ZFP_P2JointPrivate::jointScale(this);
+        b2PrismaticJoint_SetMaxMotorForce(_ZFP_P2Joint_d->implJointId, propertyValue * jointScale * jointScale);
         b2PrismaticJoint_EnableMotor(_ZFP_P2Joint_d->implJointId, this->p2_motorSpeed() > 0 && this->p2_motorForce() > 0);
     }
 }
@@ -1456,8 +1482,8 @@ void P2JointPrismatic::p2impl_jointCreate(ZF_IN P2Body *ownerBody0, ZF_IN P2Body
     implJointDef.bodyIdA = ownerBody0->_ZFP_P2Body_d->implBodyId;
     implJointDef.bodyIdB = ownerBody1->_ZFP_P2Body_d->implBodyId;
     implJointDef.collideConnected = this->p2_contactEnable();
-    implJointDef.localAnchorA = b2Vec2FromZF(ZFUIPointApplyScale(this->p2_anchor0(), ownerBody0->p2_bodyScaleFixed()));
-    implJointDef.localAnchorB = b2Vec2FromZF(ZFUIPointApplyScale(this->p2_anchor1(), ownerBody1->p2_bodyScaleFixed()));
+    implJointDef.localAnchorA = b2Vec2FromZF(ZFUIPointApplyScale(this->p2_anchor0(), ownerBody0->p2_bodyScaleInherit()));
+    implJointDef.localAnchorB = b2Vec2FromZF(ZFUIPointApplyScale(this->p2_anchor1(), ownerBody1->p2_bodyScaleInherit()));
     if(this->p2_springHertz() > 0 && this->p2_springDamping() > 0) {
         implJointDef.enableSpring = zftrue;
         implJointDef.hertz = this->p2_springHertz();
@@ -1502,12 +1528,12 @@ ZFOBJECT_REGISTER(P2JointWheel)
 
 ZFPROPERTY_ON_UPDATE_DEFINE(P2JointWheel, ZFUIPoint, p2_anchor0) {
     if(B2_IS_NON_NULL(_ZFP_P2Joint_d->implJointId)) {
-        b2Joint_SetLocalAnchorA(_ZFP_P2Joint_d->implJointId, b2Vec2FromZF(ZFUIPointApplyScale(propertyValue, this->p2_ownerBody0()->p2_bodyScaleFixed())));
+        b2Joint_SetLocalAnchorA(_ZFP_P2Joint_d->implJointId, b2Vec2FromZF(ZFUIPointApplyScale(propertyValue, this->p2_ownerBody0()->p2_bodyScaleInherit())));
     }
 }
 ZFPROPERTY_ON_UPDATE_DEFINE(P2JointWheel, ZFUIPoint, p2_anchor1) {
     if(B2_IS_NON_NULL(_ZFP_P2Joint_d->implJointId)) {
-        b2Joint_SetLocalAnchorA(_ZFP_P2Joint_d->implJointId, b2Vec2FromZF(ZFUIPointApplyScale(propertyValue, this->p2_ownerBody1()->p2_bodyScaleFixed())));
+        b2Joint_SetLocalAnchorA(_ZFP_P2Joint_d->implJointId, b2Vec2FromZF(ZFUIPointApplyScale(propertyValue, this->p2_ownerBody1()->p2_bodyScaleInherit())));
     }
 }
 ZFPROPERTY_ON_UPDATE_DEFINE(P2JointWheel, zffloat, p2_springHertz) {
@@ -1524,13 +1550,15 @@ ZFPROPERTY_ON_UPDATE_DEFINE(P2JointWheel, zffloat, p2_springDamping) {
 }
 ZFPROPERTY_ON_UPDATE_DEFINE(P2JointWheel, zffloat, p2_motorSpeed) {
     if(B2_IS_NON_NULL(_ZFP_P2Joint_d->implJointId)) {
-        b2WheelJoint_SetMotorSpeed(_ZFP_P2Joint_d->implJointId, propertyValue * _ZFP_P2JointPrivate::jointScale(this));
+        zffloat jointScale = _ZFP_P2JointPrivate::jointScale(this);
+        b2WheelJoint_SetMotorSpeed(_ZFP_P2Joint_d->implJointId, propertyValue * jointScale);
         b2WheelJoint_EnableMotor(_ZFP_P2Joint_d->implJointId, this->p2_motorSpeed() > 0 && this->p2_motorForce() > 0);
     }
 }
 ZFPROPERTY_ON_UPDATE_DEFINE(P2JointWheel, zffloat, p2_motorForce) {
     if(B2_IS_NON_NULL(_ZFP_P2Joint_d->implJointId)) {
-        b2WheelJoint_SetMaxMotorTorque(_ZFP_P2Joint_d->implJointId, propertyValue * _ZFP_P2JointPrivate::jointScale(this));
+        zffloat jointScale = _ZFP_P2JointPrivate::jointScale(this);
+        b2WheelJoint_SetMaxMotorTorque(_ZFP_P2Joint_d->implJointId, propertyValue * jointScale * jointScale);
         b2WheelJoint_EnableMotor(_ZFP_P2Joint_d->implJointId, this->p2_motorSpeed() > 0 && this->p2_motorForce() > 0);
     }
 }
@@ -1584,8 +1612,8 @@ void P2JointWheel::p2impl_jointCreate(ZF_IN P2Body *ownerBody0, ZF_IN P2Body *ow
     implJointDef.bodyIdA = ownerBody0->_ZFP_P2Body_d->implBodyId;
     implJointDef.bodyIdB = ownerBody1->_ZFP_P2Body_d->implBodyId;
     implJointDef.collideConnected = this->p2_contactEnable();
-    implJointDef.localAnchorA = b2Vec2FromZF(ZFUIPointApplyScale(this->p2_anchor0(), ownerBody0->p2_bodyScaleFixed()));
-    implJointDef.localAnchorB = b2Vec2FromZF(ZFUIPointApplyScale(this->p2_anchor1(), ownerBody1->p2_bodyScaleFixed()));
+    implJointDef.localAnchorA = b2Vec2FromZF(ZFUIPointApplyScale(this->p2_anchor0(), ownerBody0->p2_bodyScaleInherit()));
+    implJointDef.localAnchorB = b2Vec2FromZF(ZFUIPointApplyScale(this->p2_anchor1(), ownerBody1->p2_bodyScaleInherit()));
     if(this->p2_springHertz() > 0 && this->p2_springDamping() > 0) {
         implJointDef.enableSpring = zftrue;
         implJointDef.hertz = this->p2_springHertz();
@@ -1637,12 +1665,14 @@ ZFPROPERTY_ON_UPDATE_DEFINE(P2JointMotor, zffloat, p2_motorFactor) {
 }
 ZFPROPERTY_ON_UPDATE_DEFINE(P2JointMotor, zffloat, p2_motorForce) {
     if(B2_IS_NON_NULL(_ZFP_P2Joint_d->implJointId)) {
-        b2MotorJoint_SetMaxForce(_ZFP_P2Joint_d->implJointId, propertyValue * _ZFP_P2JointPrivate::jointScale(this));
+        zffloat jointScale = _ZFP_P2JointPrivate::jointScale(this);
+        b2MotorJoint_SetMaxForce(_ZFP_P2Joint_d->implJointId, propertyValue * jointScale * jointScale);
     }
 }
 ZFPROPERTY_ON_UPDATE_DEFINE(P2JointMotor, zffloat, p2_motorTorque) {
     if(B2_IS_NON_NULL(_ZFP_P2Joint_d->implJointId)) {
-        b2MotorJoint_SetMaxTorque(_ZFP_P2Joint_d->implJointId, propertyValue * _ZFP_P2JointPrivate::jointScale(this));
+        zffloat jointScale = _ZFP_P2JointPrivate::jointScale(this);
+        b2MotorJoint_SetMaxTorque(_ZFP_P2Joint_d->implJointId, propertyValue * jointScale * jointScale);
     }
 }
 ZFPROPERTY_ON_UPDATE_DEFINE(P2JointMotor, ZFUIPoint, p2_distance) {
@@ -1685,7 +1715,7 @@ void P2JointMotor::p2impl_jointCreate(ZF_IN P2Body *ownerBody0, ZF_IN P2Body *ow
     implJointDef.correctionFactor = this->p2_motorFactor();
     implJointDef.maxForce = this->p2_motorForce() * jointScale * jointScale;
     implJointDef.maxTorque = this->p2_motorTorque() * jointScale * jointScale;
-    implJointDef.linearOffset = b2Vec2FromZF(ZFUIPointApplyScale(this->p2_distance(), ownerBody1->p2_bodyScaleFixed()));
+    implJointDef.linearOffset = b2Vec2FromZF(ZFUIPointApplyScale(this->p2_distance(), ownerBody1->p2_bodyScaleInherit()));
     implJointDef.angularOffset = b2RadFromZF(this->p2_angular());
     _ZFP_P2Joint_d->implJointId = b2CreateMotorJoint(
             b2Body_GetWorld(ownerBody0->_ZFP_P2Body_d->implBodyId)
@@ -1697,12 +1727,12 @@ ZFOBJECT_REGISTER(P2JointWeld)
 
 ZFPROPERTY_ON_UPDATE_DEFINE(P2JointWeld, ZFUIPoint, p2_anchor0) {
     if(B2_IS_NON_NULL(_ZFP_P2Joint_d->implJointId)) {
-        b2Joint_SetLocalAnchorA(_ZFP_P2Joint_d->implJointId, b2Vec2FromZF(ZFUIPointApplyScale(propertyValue, this->p2_ownerBody0()->p2_bodyScaleFixed())));
+        b2Joint_SetLocalAnchorA(_ZFP_P2Joint_d->implJointId, b2Vec2FromZF(ZFUIPointApplyScale(propertyValue, this->p2_ownerBody0()->p2_bodyScaleInherit())));
     }
 }
 ZFPROPERTY_ON_UPDATE_DEFINE(P2JointWeld, ZFUIPoint, p2_anchor1) {
     if(B2_IS_NON_NULL(_ZFP_P2Joint_d->implJointId)) {
-        b2Joint_SetLocalAnchorA(_ZFP_P2Joint_d->implJointId, b2Vec2FromZF(ZFUIPointApplyScale(propertyValue, this->p2_ownerBody1()->p2_bodyScaleFixed())));
+        b2Joint_SetLocalAnchorA(_ZFP_P2Joint_d->implJointId, b2Vec2FromZF(ZFUIPointApplyScale(propertyValue, this->p2_ownerBody1()->p2_bodyScaleInherit())));
     }
 }
 ZFPROPERTY_ON_UPDATE_DEFINE(P2JointWeld, zffloat, p2_angularRef) {
@@ -1739,8 +1769,8 @@ void P2JointWeld::p2impl_jointCreate(ZF_IN P2Body *ownerBody0, ZF_IN P2Body *own
     implJointDef.bodyIdA = ownerBody0->_ZFP_P2Body_d->implBodyId;
     implJointDef.bodyIdB = ownerBody1->_ZFP_P2Body_d->implBodyId;
     implJointDef.collideConnected = this->p2_contactEnable();
-    implJointDef.localAnchorA = b2Vec2FromZF(ZFUIPointApplyScale(this->p2_anchor0(), ownerBody0->p2_bodyScaleFixed()));
-    implJointDef.localAnchorB = b2Vec2FromZF(ZFUIPointApplyScale(this->p2_anchor1(), ownerBody1->p2_bodyScaleFixed()));
+    implJointDef.localAnchorA = b2Vec2FromZF(ZFUIPointApplyScale(this->p2_anchor0(), ownerBody0->p2_bodyScaleInherit()));
+    implJointDef.localAnchorB = b2Vec2FromZF(ZFUIPointApplyScale(this->p2_anchor1(), ownerBody1->p2_bodyScaleInherit()));
     implJointDef.referenceAngle = b2RadFromZF(ownerBody1->p2_rotation() - ownerBody0->p2_rotation() + this->p2_angularRef());
     implJointDef.linearHertz = this->p2_distanceHertz();
     implJointDef.linearDampingRatio = this->p2_distanceDamping();
@@ -1772,6 +1802,11 @@ ZFPROPERTY_ON_UPDATE_DEFINE(P2JointMouse, ZFUIPoint, p2_position) {
         b2MouseJoint_SetTarget(_ZFP_P2Joint_d->implJointId, b2Vec2FromZF(propertyValue));
     }
 }
+ZFPROPERTY_ON_UPDATE_DEFINE(P2JointMouse, zffloat, p2_motorForce) {
+    if(B2_IS_NON_NULL(_ZFP_P2Joint_d->implJointId)) {
+        b2MouseJoint_SetMaxForce(_ZFP_P2Joint_d->implJointId, propertyValue);
+    }
+}
 void P2JointMouse::p2impl_jointCreate(ZF_IN P2Body *ownerBody0, ZF_IN P2Body *ownerBody1) {
     zfsuper::p2impl_jointCreate(ownerBody0, ownerBody1);
     _ZFP_P2Joint_implJointDef(this, ownerBody0, ownerBody1);
@@ -1780,7 +1815,7 @@ void P2JointMouse::p2impl_jointCreate(ZF_IN P2Body *ownerBody0, ZF_IN P2Body *ow
     implJointDef.bodyIdA = ownerBody0->_ZFP_P2Body_d->implBodyId;
     implJointDef.bodyIdB = ownerBody1->_ZFP_P2Body_d->implBodyId;
     implJointDef.target = b2Vec2FromZF(this->p2_position());
-    implJointDef.maxForce = 1000;
+    implJointDef.maxForce = this->p2_motorForce();
     _ZFP_P2Joint_d->implJointId = b2CreateMouseJoint(
             b2Body_GetWorld(ownerBody0->_ZFP_P2Body_d->implBodyId)
             , &implJointDef
@@ -1792,7 +1827,7 @@ ZFENUM_DEFINE(P2BodyType)
 
 ZFTYPEID_DEFINE_BY_STRING_CONVERTER(P2BodyTransform, P2BodyTransform, {
         ZFCoreArray<ZFIndexRange> pos;
-        if(!ZFCoreDataPairSplitString(pos, 5, src, srcLen)) {
+        if(!ZFCoreDataPairSplitString(pos, 3, src, srcLen)) {
             zfstringAppend(errorHint, "invalid data: %s", zftext(src, srcLen));
             return zffalse;
         }
@@ -1800,8 +1835,6 @@ ZFTYPEID_DEFINE_BY_STRING_CONVERTER(P2BodyTransform, P2BodyTransform, {
                 || !ZFUIPointFromStringT(v.p2_position, zftext(src + pos[0].start, pos[0].count), errorHint)
                 || !zffloatFromStringT(v.p2_rotation, zftext(src + pos[1].start, pos[1].count), errorHint)
                 || !zffloatFromStringT(v.p2_bodyScale, zftext(src + pos[2].start, pos[2].count), errorHint)
-                || !ZFUIPointFromStringT(v.p2_positionVelocity, zftext(src + pos[3].start, pos[3].count), errorHint)
-                || !zffloatFromStringT(v.p2_rotationVelocity, zftext(src + pos[4].start, pos[4].count), errorHint)
                 ) {
             return zffalse;
         }
@@ -1812,8 +1845,6 @@ ZFTYPEID_DEFINE_BY_STRING_CONVERTER(P2BodyTransform, P2BodyTransform, {
                 || !ZFUIPointToStringT(s, v.p2_position, errorHint) || (s.append(','), zffalse)
                 || !zffloatToStringT(s, v.p2_rotation, errorHint) || (s.append(','), zffalse)
                 || !zffloatToStringT(s, v.p2_bodyScale, errorHint) || (s.append(','), zffalse)
-                || !ZFUIPointToStringT(s, v.p2_positionVelocity, errorHint) || (s.append(','), zffalse)
-                || !zffloatToStringT(s, v.p2_rotationVelocity, errorHint) || (s.append(','), zffalse)
                 ) {
             return zffalse;
         }
@@ -1823,8 +1854,6 @@ ZFTYPEID_DEFINE_BY_STRING_CONVERTER(P2BodyTransform, P2BodyTransform, {
 ZFMETHOD_USER_REGISTER_FOR_WRAPPER_VAR(v_P2BodyTransform, ZFUIPoint, p2_position)
 ZFMETHOD_USER_REGISTER_FOR_WRAPPER_VAR(v_P2BodyTransform, zffloat, p2_rotation)
 ZFMETHOD_USER_REGISTER_FOR_WRAPPER_VAR(v_P2BodyTransform, zffloat, p2_bodyScale)
-ZFMETHOD_USER_REGISTER_FOR_WRAPPER_VAR(v_P2BodyTransform, ZFUIPoint, p2_positionVelocity)
-ZFMETHOD_USER_REGISTER_FOR_WRAPPER_VAR(v_P2BodyTransform, zffloat, p2_rotationVelocity)
 
 zfclassNotPOD _ZFP_P2BodyTransfrom {
 public:
@@ -1835,8 +1864,6 @@ public:
             item.p2_position = body->p2_position();
             item.p2_rotation = body->p2_rotation();
             item.p2_bodyScale = body->p2_bodyScale();
-            item.p2_positionVelocity = body->p2_positionVelocity();
-            item.p2_rotationVelocity = body->p2_rotationVelocity();
             body = body->_ZFP_P2Body_d->ownerBody;
         }
         return ret;
@@ -1889,15 +1916,6 @@ private:
 
         childGlobal.p2_rotation = P.p2_rotation + C.p2_rotation;
         childGlobal.p2_bodyScale = _scaleFix(P.p2_bodyScale) * _scaleFix(C.p2_bodyScale);
-        childGlobal.p2_rotationVelocity = P.p2_rotationVelocity + C.p2_rotationVelocity;
-
-        zffloat omega_rad = P.p2_rotationVelocity * zfm_PI() / 180.0f;
-        zffloat qx = C.p2_positionVelocity.x + omega_rad * C.p2_position.y;
-        zffloat qy = C.p2_positionVelocity.y - omega_rad * C.p2_position.x;
-        zffloat rx, ry;
-        _applyR(rx, ry, c, s, qx, qy);
-        childGlobal.p2_positionVelocity.x = P.p2_positionVelocity.x + _scaleFix(P.p2_bodyScale) * rx;
-        childGlobal.p2_positionVelocity.y = P.p2_positionVelocity.y + _scaleFix(P.p2_bodyScale) * ry;
     }
     static void _calcInv(ZF_OUT P2BodyTransform &childLocal, ZF_IN const P2BodyTransform &childGlobal, ZF_IN const P2BodyTransform &parentGlobal) {
         P2BodyTransform P = parentGlobal;
@@ -1913,16 +1931,6 @@ private:
 
         childLocal.p2_rotation = C.p2_rotation - P.p2_rotation;
         childLocal.p2_bodyScale = _scaleFix(C.p2_bodyScale) * invS;
-        childLocal.p2_rotationVelocity = C.p2_rotationVelocity - P.p2_rotationVelocity;
-
-        zffloat wx = (C.p2_positionVelocity.x - P.p2_positionVelocity.x) * invS;
-        zffloat wy = (C.p2_positionVelocity.y - P.p2_positionVelocity.y) * invS;
-        zffloat vx_rot, vy_rot;
-        _applyRInv(vx_rot, vy_rot, c, s, wx, wy);
-
-        zffloat omega_rad = P.p2_rotationVelocity * zfm_PI() / 180.0f;
-        childLocal.p2_positionVelocity.x = vx_rot - omega_rad * childLocal.p2_position.y;
-        childLocal.p2_positionVelocity.y = vy_rot + omega_rad * childLocal.p2_position.x;
     }
     static void _parentsToGlobal(ZF_OUT P2BodyTransform &parentGlobal, ZF_IN const ZFCoreArray<P2BodyTransform> &parents) {
         P2BodyTransform t;
@@ -2032,6 +2040,18 @@ ZFPROPERTY_ON_UPDATE_DEFINE(P2Body, zffloat, p2_bodyScale) {
     }
 }
 
+ZFMETHOD_DEFINE_0(P2Body, zffloat, p2_bodyScaleInherit) {
+    if(_ZFP_P2Body_d->ownerBody) {
+        zffloat v = 1;
+        for(P2Body *body = _ZFP_P2Body_d->ownerBody; body; body = body->_ZFP_P2Body_d->ownerBody) {
+            v *= body->p2_bodyScale();
+        }
+        return v;
+    }
+    else {
+        return 1;
+    }
+}
 ZFMETHOD_DEFINE_0(P2Body, zffloat, p2_bodyScaleFixed) {
     if(_ZFP_P2Body_d->ownerBody) {
         zffloat v = this->p2_bodyScale();
@@ -2086,8 +2106,6 @@ ZFPROPERTY_ON_UPDATE_DEFINE(P2Body, ZFUIPoint, p2_position) {
             g.p2_position = b2Vec2ToZF(implTransform.p);
             g.p2_rotation = b2RotToZF(implTransform.q);
             g.p2_bodyScale = this->p2_bodyScale();
-            g.p2_positionVelocity = b2Vec2ToZF(b2Body_GetLinearVelocity(_ZFP_P2Body_d->implBodyId));
-            g.p2_rotationVelocity = b2AngularVelocityToZF(b2Body_GetAngularVelocity(_ZFP_P2Body_d->implBodyId));
 
             P2BodyTransform l;
             P2BodyTransformToLocal(l, g, parents);
@@ -2103,27 +2121,7 @@ ZFPROPERTY_ON_UPDATE_DEFINE(P2Body, ZFUIPoint, p2_position) {
 }
 ZFPROPERTY_ON_UPDATE_DEFINE(P2Body, ZFUIPoint, p2_positionVelocity) {
     if(B2_IS_NON_NULL(_ZFP_P2Body_d->implBodyId)) {
-        if(_ZFP_P2Body_d->ownerBody) {
-            ZFCoreArray<P2BodyTransform> parents = _ZFP_P2Body_d->ownerBody->p2_transforms();
-
-            P2BodyTransform g;
-            b2Transform implTransform = b2Body_GetTransform(_ZFP_P2Body_d->implBodyId);
-            g.p2_position = b2Vec2ToZF(implTransform.p);
-            g.p2_rotation = b2RotToZF(implTransform.q);
-            g.p2_bodyScale = this->p2_bodyScale();
-            g.p2_positionVelocity = b2Vec2ToZF(b2Body_GetLinearVelocity(_ZFP_P2Body_d->implBodyId));
-            g.p2_rotationVelocity = b2AngularVelocityToZF(b2Body_GetAngularVelocity(_ZFP_P2Body_d->implBodyId));
-
-            P2BodyTransform l;
-            P2BodyTransformToLocal(l, g, parents);
-            l.p2_positionVelocity = propertyValue;
-
-            P2BodyTransformToGlobal(g, l, parents);
-            b2Body_SetLinearVelocity(_ZFP_P2Body_d->implBodyId, b2Vec2FromZF(g.p2_positionVelocity));
-        }
-        else {
-            b2Body_SetLinearVelocity(_ZFP_P2Body_d->implBodyId, b2Vec2FromZF(propertyValue));
-        }
+        b2Body_SetLinearVelocity(_ZFP_P2Body_d->implBodyId, b2Vec2FromZF(propertyValue));
     }
 }
 ZFPROPERTY_ON_UPDATE_DEFINE(P2Body, zffloat, p2_positionDamping) {
@@ -2144,8 +2142,6 @@ ZFPROPERTY_ON_UPDATE_DEFINE(P2Body, zffloat, p2_rotation) {
             g.p2_position = b2Vec2ToZF(implTransform.p);
             g.p2_rotation = b2RotToZF(implTransform.q);
             g.p2_bodyScale = this->p2_bodyScale();
-            g.p2_positionVelocity = b2Vec2ToZF(b2Body_GetLinearVelocity(_ZFP_P2Body_d->implBodyId));
-            g.p2_rotationVelocity = b2AngularVelocityToZF(b2Body_GetAngularVelocity(_ZFP_P2Body_d->implBodyId));
 
             P2BodyTransform l;
             P2BodyTransformToLocal(l, g, parents);
@@ -2161,27 +2157,7 @@ ZFPROPERTY_ON_UPDATE_DEFINE(P2Body, zffloat, p2_rotation) {
 }
 ZFPROPERTY_ON_UPDATE_DEFINE(P2Body, zffloat, p2_rotationVelocity) {
     if(B2_IS_NON_NULL(_ZFP_P2Body_d->implBodyId)) {
-        if(_ZFP_P2Body_d->ownerBody) {
-            ZFCoreArray<P2BodyTransform> parents = _ZFP_P2Body_d->ownerBody->p2_transforms();
-
-            P2BodyTransform g;
-            b2Transform implTransform = b2Body_GetTransform(_ZFP_P2Body_d->implBodyId);
-            g.p2_position = b2Vec2ToZF(implTransform.p);
-            g.p2_rotation = b2RotToZF(implTransform.q);
-            g.p2_bodyScale = this->p2_bodyScale();
-            g.p2_positionVelocity = b2Vec2ToZF(b2Body_GetLinearVelocity(_ZFP_P2Body_d->implBodyId));
-            g.p2_rotationVelocity = b2AngularVelocityToZF(b2Body_GetAngularVelocity(_ZFP_P2Body_d->implBodyId));
-
-            P2BodyTransform l;
-            P2BodyTransformToLocal(l, g, parents);
-            l.p2_rotationVelocity = propertyValue;
-
-            P2BodyTransformToGlobal(g, l, parents);
-            b2Body_SetAngularVelocity(_ZFP_P2Body_d->implBodyId, b2AngularVelocityFromZF(g.p2_rotationVelocity));
-        }
-        else {
-            b2Body_SetAngularVelocity(_ZFP_P2Body_d->implBodyId, b2AngularVelocityFromZF(propertyValue));
-        }
+        b2Body_SetAngularVelocity(_ZFP_P2Body_d->implBodyId, b2AngularVelocityFromZF(propertyValue));
     }
 }
 ZFPROPERTY_ON_UPDATE_DEFINE(P2Body, zffloat, p2_rotationDamping) {
@@ -2207,13 +2183,13 @@ ZFMETHOD_DEFINE_0(P2Body, ZFUIRect, p2_AABBLocal) {
         return _ZFP_P2Body_d->bodyAABBLocal;
     }
 }
-ZFMETHOD_DEFINE_0(P2Body, ZFUIPoint, p2_centerOfMass) {
+ZFMETHOD_DEFINE_0(P2Body, ZFUIPoint, p2_massCenter) {
     if(ZFBitTest(_ZFP_P2Body_d->stateFlag, _ZFP_P2BodyPrivate::stateFlag_bodyPosUpdateRequested)) {
         _ZFP_P2Body_d->bodyPosUpdate();
-        return _ZFP_P2Body_d->centerOfMass;
+        return _ZFP_P2Body_d->massCenter;
     }
     else {
-        return _ZFP_P2Body_d->centerOfMass;
+        return _ZFP_P2Body_d->massCenter;
     }
 }
 ZFMETHOD_DEFINE_0(P2Body, zffloat, p2_mass) {
@@ -2233,72 +2209,12 @@ ZFMETHOD_DEFINE_0(P2Body, zffloat, p2_rotationInertia) {
     }
 }
 
-ZFMETHOD_DEFINE_0(P2Body, ZFUIPoint, p2_positionCurLocal) {
+ZFMETHOD_DEFINE_0(P2Body, ZFUIPoint, p2_massCenterCur) {
     if(B2_IS_NON_NULL(_ZFP_P2Body_d->implBodyId)) {
-        if(_ZFP_P2Body_d->ownerBody) {
-            P2BodyTransform g;
-            g.p2_position = b2Vec2ToZF(b2Body_GetPosition(_ZFP_P2Body_d->implBodyId));
-            P2BodyTransform l;
-            P2BodyTransformToLocal(l, g, _ZFP_P2Body_d->ownerBody->p2_transforms());
-            return l.p2_position;
-        }
-        else {
-            return b2Vec2ToZF(b2Body_GetPosition(_ZFP_P2Body_d->implBodyId));
-        }
+        return b2Vec2ToZF(b2Body_GetWorldCenterOfMass(_ZFP_P2Body_d->implBodyId));
     }
     else {
-        return this->p2_position();
-    }
-}
-ZFMETHOD_DEFINE_0(P2Body, ZFUIPoint, p2_positionVelocityCurLocal) {
-    if(B2_IS_NON_NULL(_ZFP_P2Body_d->implBodyId)) {
-        if(_ZFP_P2Body_d->ownerBody) {
-            P2BodyTransform g;
-            g.p2_positionVelocity = b2Vec2ToZF(b2Body_GetLinearVelocity(_ZFP_P2Body_d->implBodyId));
-            P2BodyTransform l;
-            P2BodyTransformToLocal(l, g, _ZFP_P2Body_d->ownerBody->p2_transforms());
-            return l.p2_positionVelocity;
-        }
-        else {
-            return b2Vec2ToZF(b2Body_GetPosition(_ZFP_P2Body_d->implBodyId));
-        }
-    }
-    else {
-        return this->p2_position();
-    }
-}
-ZFMETHOD_DEFINE_0(P2Body, zffloat, p2_rotationCurLocal) {
-    if(B2_IS_NON_NULL(_ZFP_P2Body_d->implBodyId)) {
-        if(_ZFP_P2Body_d->ownerBody) {
-            P2BodyTransform g;
-            g.p2_rotation = b2RotToZF(b2Body_GetRotation(_ZFP_P2Body_d->implBodyId));
-            P2BodyTransform l;
-            P2BodyTransformToLocal(l, g, _ZFP_P2Body_d->ownerBody->p2_transforms());
-            return l.p2_rotation;
-        }
-        else {
-            return b2RotToZF(b2Body_GetRotation(_ZFP_P2Body_d->implBodyId));
-        }
-    }
-    else {
-        return this->p2_rotation();
-    }
-}
-ZFMETHOD_DEFINE_0(P2Body, zffloat, p2_rotationVelocityCurLocal) {
-    if(B2_IS_NON_NULL(_ZFP_P2Body_d->implBodyId)) {
-        if(_ZFP_P2Body_d->ownerBody) {
-            P2BodyTransform g;
-            g.p2_rotationVelocity = b2AngularVelocityToZF(b2Body_GetAngularVelocity(_ZFP_P2Body_d->implBodyId));
-            P2BodyTransform l;
-            P2BodyTransformToLocal(l, g, _ZFP_P2Body_d->ownerBody->p2_transforms());
-            return l.p2_rotationVelocity;
-        }
-        else {
-            return b2AngularVelocityToZF(b2Body_GetAngularVelocity(_ZFP_P2Body_d->implBodyId));
-        }
-    }
-    else {
-        return this->p2_rotationVelocity();
+        return this->p2_positionCur();
     }
 }
 
@@ -2324,16 +2240,7 @@ ZFMETHOD_DEFINE_0(P2Body, ZFUIPoint, p2_positionVelocityCur) {
         return b2Vec2ToZF(b2Body_GetLinearVelocity(_ZFP_P2Body_d->implBodyId));
     }
     else {
-        if(_ZFP_P2Body_d->ownerBody) {
-            P2BodyTransform l;
-            l.p2_positionVelocity = this->p2_positionVelocity();
-            P2BodyTransform g;
-            P2BodyTransformToGlobal(g, l, _ZFP_P2Body_d->ownerBody->p2_transforms());
-            return g.p2_positionVelocity;
-        }
-        else {
-            return this->p2_positionVelocity();
-        }
+        return this->p2_positionVelocity();
     }
 }
 ZFMETHOD_DEFINE_0(P2Body, zffloat, p2_rotationCur) {
@@ -2358,16 +2265,7 @@ ZFMETHOD_DEFINE_0(P2Body, zffloat, p2_rotationVelocityCur) {
         return b2AngularVelocityToZF(b2Body_GetAngularVelocity(_ZFP_P2Body_d->implBodyId));
     }
     else {
-        if(_ZFP_P2Body_d->ownerBody) {
-            P2BodyTransform l;
-            l.p2_rotationVelocity = this->p2_rotationVelocity();
-            P2BodyTransform g;
-            P2BodyTransformToGlobal(g, l, _ZFP_P2Body_d->ownerBody->p2_transforms());
-            return g.p2_rotationVelocity;
-        }
-        else {
-            return this->p2_rotationVelocity();
-        }
+        return this->p2_rotationVelocity();
     }
 }
 
@@ -3503,7 +3401,13 @@ static void _ZFP_P2JointAttach(ZF_IN P2World *ownerWorld, ZF_IN P2Body *ownerBod
     joint->_ZFP_P2Joint_d->ownerWorld = ownerWorld;
     joint->_ZFP_P2Joint_d->ownerBody = ownerBody;
     if(ownerWorld) {
-        ownerWorld->_ZFP_P2World_d->pendingJoint[joint];
+        ownerWorld->_ZFP_P2World_d->pendingJoint[joint] = zftrue;
+    }
+    else if(ownerBody) {
+        P2World *world = ownerBody->p2_ownerWorld();
+        if(world) {
+            world->_ZFP_P2World_d->pendingJoint[joint] = zftrue;
+        }
     }
 }
 static void _ZFP_P2JointDetach(ZF_IN P2Joint *joint) {
@@ -3536,11 +3440,15 @@ static void _ZFP_P2BodyAttach(ZF_IN P2World *ownerWorld, ZF_IN P2Body *ownerBody
             );
     body->_ZFP_P2Body_d->ownerWorld = ownerWorld;
     body->_ZFP_P2Body_d->ownerBody = ownerBody;
-    P2World *world = body->p2_ownerWorld();
-    if(world) {
-        world->_ZFP_P2World_d->pendingBody[body];
+    if(ownerWorld) {
+        _ZFP_P2WorldPrivate::bodyTreeAttach(ownerWorld, body);
     }
-    _ZFP_P2BodyPrivate::updatePreSolveCfg(body);
+    else if(ownerBody) {
+        P2World *world = ownerBody->p2_ownerWorld();
+        if(world) {
+            _ZFP_P2WorldPrivate::bodyTreeAttach(ownerWorld, body);
+        }
+    }
 }
 static void _ZFP_P2BodyDetach(ZF_IN P2Body *body) {
     P2World *world = body->p2_ownerWorld();
@@ -3605,7 +3513,7 @@ static void _ZFP_P2ExtDetach(ZF_IN P2Ext *ext) {
 static void _ZFP_P2BodyImplMassUpdateRequest(ZF_IN P2Body *body) {
     P2World *ownerWorld = body->p2_ownerWorld();
     if(ownerWorld) {
-        ownerWorld->_ZFP_P2World_d->pendingBody[body];
+        ownerWorld->_ZFP_P2World_d->pendingBody[body] = zftrue;
     }
     ZFBitSet(body->_ZFP_P2Body_d->stateFlag, _ZFP_P2BodyPrivate::stateFlag_massUpdateRequested);
 }
@@ -3635,27 +3543,23 @@ static void _ZFP_P2BodyImplCreate(ZF_IN P2World *world, ZF_IN P2Body *body) {
     implBodyDef.gravityScale = body->p2_gravityScale();
     implBodyDef.linearDamping = body->p2_positionDamping();
     implBodyDef.angularDamping = body->p2_rotationDamping();
+    implBodyDef.linearVelocity = b2Vec2FromZF(body->p2_positionVelocity());
+    implBodyDef.angularVelocity = b2AngularVelocityFromZF(body->p2_rotationVelocity());
     if(body->_ZFP_P2Body_d->ownerBody) {
         P2BodyTransform l;
         l.p2_position = body->p2_position();
         l.p2_rotation = body->p2_rotation();
         l.p2_bodyScale = body->p2_bodyScale();
-        l.p2_positionVelocity = body->p2_positionVelocity();
-        l.p2_rotationVelocity = body->p2_rotationVelocity();
 
         P2BodyTransform g;
         P2BodyTransformToGlobal(g, l, body->_ZFP_P2Body_d->ownerBody->p2_transforms());
 
         implBodyDef.position = b2Vec2FromZF(g.p2_position);
         implBodyDef.rotation = b2RotFromZF(g.p2_rotation);
-        implBodyDef.linearVelocity = b2Vec2FromZF(g.p2_positionVelocity);
-        implBodyDef.angularVelocity = b2AngularVelocityFromZF(g.p2_rotationVelocity);
     }
     else {
         implBodyDef.position = b2Vec2FromZF(body->p2_position());
         implBodyDef.rotation = b2RotFromZF(body->p2_rotation());
-        implBodyDef.linearVelocity = b2Vec2FromZF(body->p2_positionVelocity());
-        implBodyDef.angularVelocity = b2AngularVelocityFromZF(body->p2_rotationVelocity());
     }
     body->_ZFP_P2Body_d->implBodyId = b2CreateBody(world->_ZFP_P2World_d->implWorldId, &implBodyDef);
     ZFBitSet(body->_ZFP_P2Body_d->stateFlag, _ZFP_P2BodyPrivate::stateFlag_bodyPosUpdateRequested);

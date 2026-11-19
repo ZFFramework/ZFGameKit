@@ -127,7 +127,7 @@ private:
                     , position
                     , ZFUIRectApplyScale(body->p2_AABBLocal(), bodyScale)
                     , rotation
-                    , ZFUIPointApplyScale(body->p2_centerOfMass(), bodyScale)
+                    , ZFUIPointApplyScale(body->p2_massCenter(), bodyScale)
                     ));
     }
 };
@@ -321,7 +321,7 @@ ZFMETHOD_FUNC_DEFINE_2(void, P2UIRectFromBodyT
                 , body->p2_positionCur()
                 , body->p2_AABBLocal()
                 , body->p2_rotationCur()
-                , body->p2_centerOfMass()
+                , body->p2_massCenter()
                 );
     }
 }
@@ -341,22 +341,37 @@ ZFMETHOD_FUNC_DEFINE_8(void, P2UIRectFromBodyT
         , ZFMP_IN(const ZFUIPoint &, position)
         , ZFMP_IN(const ZFUIRect &, aabbLocal)
         , ZFMP_IN_OPT(zffloat, rotation, 0)
-        , ZFMP_IN_OPT(const ZFUIPoint &, centerOfMass, ZFUIPointZero())
+        , ZFMP_IN_OPT(const ZFUIPoint &, massCenter, ZFUIPointZero())
         ) {
-    zffloat r = (zffloat)(rotation * zfm_PI() / 180);
-    zffloat cr = cos(r);
-    zffloat sr = sin(r);
-    zffloat w = aabbLocal.width;
-    zffloat h = aabbLocal.height;
-    zffloat dx = w / 2 - (centerOfMass.x - aabbLocal.x);
-    zffloat dy = h / 2 - (centerOfMass.y - aabbLocal.y);
-    zffloat x = position.x + dx * cr + dy * sr;
-    zffloat y = position.y - dx * sr + dy * cr;
-
-    rect.x = (x + worldUIOffset.x - w / 2) * worldUIScale;
-    rect.y = worldUIHeight + (-y - worldUIOffset.y - h / 2) * worldUIScale;
-    rect.width = w * worldUIScale;
-    rect.height = h * worldUIScale;
+#if 0
+    const zffloat rad = rotation * zfm_PI() / 180.0f;
+    const zffloat rCos = zfm_cos(rad);
+    const zffloat rSin = zfm_sin(rad);
+    const zffloat cx = aabbLocal.x + aabbLocal.width * 0.5f;
+    const zffloat cy = aabbLocal.y + aabbLocal.height * 0.5f;
+    const zffloat mcWorldX = position.x + (massCenter.x * rCos + massCenter.y * rSin);
+    const zffloat mcWorldY = position.y + (-massCenter.x * rSin + massCenter.y * rCos);
+    const zffloat dx = cx - massCenter.x;
+    const zffloat dy = cy - massCenter.y;
+    const zffloat centerWorldX = mcWorldX + (dx * rCos + dy * rSin);
+    const zffloat centerWorldY = mcWorldY + (-dx * rSin + dy * rCos);
+    const zffloat centerUIx = centerWorldX * worldUIScale + worldUIOffset.x;
+    const zffloat centerUIy = worldUIHeight - centerWorldY * worldUIScale - worldUIOffset.y;
+    rect.width = aabbLocal.width * worldUIScale;
+    rect.height = aabbLocal.height * worldUIScale;
+    rect.x = centerUIx - rect.width * 0.5f;
+    rect.y = centerUIy - rect.height * 0.5f;
+#else
+    const zffloat rad = rotation * zfm_PI() / 180.0f;
+    const zffloat rCos = zfm_cos(rad);
+    const zffloat rSin = zfm_sin(rad);
+    const zffloat dx = (aabbLocal.x + aabbLocal.width * 0.5f) - massCenter.x;
+    const zffloat dy = (aabbLocal.y + aabbLocal.height * 0.5f) - massCenter.y;
+    rect.width = aabbLocal.width * worldUIScale;
+    rect.height = aabbLocal.height * worldUIScale;
+    rect.x = (((position.x + (massCenter.x * rCos + massCenter.y * rSin)) + (dx * rCos + dy * rSin)) * worldUIScale + worldUIOffset.x) - rect.width * 0.5f;
+    rect.y = (worldUIHeight - ((position.y + (-massCenter.x * rSin + massCenter.y * rCos)) + (-dx * rSin + dy * rCos)) * worldUIScale - worldUIOffset.y) - rect.height * 0.5f;
+#endif
 }
 ZFMETHOD_FUNC_DEFINE_7(ZFUIRect, P2UIRectFromBody
         , ZFMP_IN(zffloat, worldUIHeight)
@@ -365,7 +380,7 @@ ZFMETHOD_FUNC_DEFINE_7(ZFUIRect, P2UIRectFromBody
         , ZFMP_IN(const ZFUIPoint &, position)
         , ZFMP_IN(const ZFUIRect &, aabbLocal)
         , ZFMP_IN_OPT(zffloat, rotation, 0)
-        , ZFMP_IN_OPT(const ZFUIPoint &, centerOfMass, ZFUIPointZero())
+        , ZFMP_IN_OPT(const ZFUIPoint &, massCenter, ZFUIPointZero())
         ) {
     ZFUIRect rect;
     P2UIRectFromBodyT(
@@ -376,7 +391,7 @@ ZFMETHOD_FUNC_DEFINE_7(ZFUIRect, P2UIRectFromBody
             , position
             , aabbLocal
             , rotation
-            , centerOfMass
+            , massCenter
             );
     return rect;
 }

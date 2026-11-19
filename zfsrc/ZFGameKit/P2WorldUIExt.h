@@ -185,7 +185,7 @@ ZFMETHOD_FUNC_DECLARE_8(ZFLIB_ZFGameKit, void, P2UIRectFromBodyT
         , ZFMP_IN(const ZFUIPoint &, position)
         , ZFMP_IN(const ZFUIRect &, aabbLocal)
         , ZFMP_IN_OPT(zffloat, rotation, 0)
-        , ZFMP_IN_OPT(const ZFUIPoint &, centerOfMass, ZFUIPointZero())
+        , ZFMP_IN_OPT(const ZFUIPoint &, massCenter, ZFUIPointZero())
         )
 /** @brief transform coordinate between UI and P2 */
 ZFMETHOD_FUNC_DECLARE_7(ZFLIB_ZFGameKit, ZFUIRect, P2UIRectFromBody
@@ -195,7 +195,7 @@ ZFMETHOD_FUNC_DECLARE_7(ZFLIB_ZFGameKit, ZFUIRect, P2UIRectFromBody
         , ZFMP_IN(const ZFUIPoint &, position)
         , ZFMP_IN(const ZFUIRect &, aabbLocal)
         , ZFMP_IN_OPT(zffloat, rotation, 0)
-        , ZFMP_IN_OPT(const ZFUIPoint &, centerOfMass, ZFUIPointZero())
+        , ZFMP_IN_OPT(const ZFUIPoint &, massCenter, ZFUIPointZero())
         )
 
 // ============================================================

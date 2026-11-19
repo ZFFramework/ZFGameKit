@@ -447,10 +447,10 @@ public:
     ZFPROPERTY_ASSIGN(zffloat, p2_motorFactor, P2JointMotorFactorNormal())
     ZFPROPERTY_ON_UPDATE_DECLARE(zffloat, p2_motorFactor)
     /** @brief see #P2World */
-    ZFPROPERTY_ASSIGN(zffloat, p2_motorForce, 1)
+    ZFPROPERTY_ASSIGN(zffloat, p2_motorForce, 100)
     ZFPROPERTY_ON_UPDATE_DECLARE(zffloat, p2_motorForce)
     /** @brief see #P2World */
-    ZFPROPERTY_ASSIGN(zffloat, p2_motorTorque, 1)
+    ZFPROPERTY_ASSIGN(zffloat, p2_motorTorque, 100)
     ZFPROPERTY_ON_UPDATE_DECLARE(zffloat, p2_motorTorque)
     /** @brief see #P2World */
     ZFPROPERTY_ASSIGN(ZFUIPoint, p2_distance)
@@ -520,6 +520,10 @@ public:
     /** @brief see #P2World, mouse position relative to world */
     ZFPROPERTY_ASSIGN(ZFUIPoint, p2_position)
     ZFPROPERTY_ON_UPDATE_DECLARE(ZFUIPoint, p2_position)
+
+    /** @brief see #P2World */
+    ZFPROPERTY_ASSIGN(zffloat, p2_motorForce, 1000)
+    ZFPROPERTY_ON_UPDATE_DECLARE(zffloat, p2_motorForce)
 
 protected:
     zfoverride
@@ -606,8 +610,6 @@ public:
     ZFUIPoint p2_position; /**< @brief see #P2Body::p2_toLocal */
     zffloat p2_rotation /**< @brief see #P2Body::p2_toLocal */;
     zffloat p2_bodyScale; /**< @brief see #P2Body::p2_toLocal */
-    ZFUIPoint p2_positionVelocity; /**< @brief see #P2Body::p2_toLocal */
-    zffloat p2_rotationVelocity; /**< @brief see #P2Body::p2_toLocal */
 };
 ZFTYPEID_DECLARE(ZFLIB_ZFGameKit, P2BodyTransform, P2BodyTransform)
 ZFTYPEID_REG(ZFLIB_ZFGameKit, P2BodyTransform, P2BodyTransform)
@@ -728,6 +730,8 @@ public:
     /** @brief see #p2_toLocal, note changing scale is heavy task */
     ZFPROPERTY_ASSIGN(zffloat, p2_bodyScale, 1)
     ZFPROPERTY_ON_UPDATE_DECLARE(zffloat, p2_bodyScale)
+    /** @brief see #p2_toLocal, all of #p2_ownerBody's #p2_bodyScale, excluding this body */
+    ZFMETHOD_DECLARE_0(zffloat, p2_bodyScaleInherit)
     /** @brief see #p2_toLocal, this body and all of #p2_ownerBody's #p2_bodyScale */
     ZFMETHOD_DECLARE_0(zffloat, p2_bodyScaleFixed)
 
@@ -740,14 +744,14 @@ public:
     /** @brief see #P2World */
     ZFPROPERTY_ASSIGN(zfbool, p2_bullet)
     ZFPROPERTY_ON_UPDATE_DECLARE(zfbool, p2_bullet)
-    /** @brief see #P2World */
+    /** @brief see #P2World, whether keep this body's rotation */
     ZFPROPERTY_ASSIGN(zfbool, p2_rotationFixed)
     ZFPROPERTY_ON_UPDATE_DECLARE(zfbool, p2_rotationFixed)
     /** @brief see #P2World */
     ZFPROPERTY_ASSIGN(zffloat, p2_gravityScale, 1.0f)
     ZFPROPERTY_ON_UPDATE_DECLARE(zffloat, p2_gravityScale)
 
-    /** @brief see #p2_toLocal */
+    /** @brief see #p2_toLocal, body's origin's position relative to parent */
     ZFPROPERTY_ASSIGN(ZFUIPoint, p2_position)
     ZFPROPERTY_ON_UPDATE_DECLARE(ZFUIPoint, p2_position)
     /** @brief see #p2_toLocal */
@@ -757,10 +761,10 @@ public:
     ZFPROPERTY_ASSIGN(zffloat, p2_positionDamping)
     ZFPROPERTY_ON_UPDATE_DECLARE(zffloat, p2_positionDamping)
 
-    /** @brief see #p2_toLocal, range in [0, 360] */
+    /** @brief see #p2_toLocal, range in [0, 360], note the rotation would around the body's origin */
     ZFPROPERTY_ASSIGN(zffloat, p2_rotation)
     ZFPROPERTY_ON_UPDATE_DECLARE(zffloat, p2_rotation)
-    /** @brief see #p2_toLocal */
+    /** @brief see #p2_toLocal, note the rotation velocity would around the body's mass center */
     ZFPROPERTY_ASSIGN(zffloat, p2_rotationVelocity)
     ZFPROPERTY_ON_UPDATE_DECLARE(zffloat, p2_rotationVelocity)
     /** @brief see #P2World */
@@ -787,9 +791,10 @@ public:
      *
      * not applied with #P2Body::p2_bodyScale
      *
-     * note: valid only after added to world
+     * note: valid only after added to world,
+     * and only for dynamic body
      */
-    ZFMETHOD_DECLARE_0(ZFUIPoint, p2_centerOfMass)
+    ZFMETHOD_DECLARE_0(ZFUIPoint, p2_massCenter)
 
     /** @brief see #P2World */
     ZFMETHOD_DECLARE_0(zffloat, p2_mass)
@@ -802,17 +807,10 @@ public:
      */
     ZFMETHOD_DECLARE_0(zffloat, p2_rotationInertia)
 
-    /** @brief see #p2_toLocal */
-    ZFMETHOD_DECLARE_0(ZFUIPoint, p2_positionCurLocal)
-    /** @brief see #p2_toLocal */
-    ZFMETHOD_DECLARE_0(ZFUIPoint, p2_positionVelocityCurLocal)
+    /** @brief see #p2_massCenter, the body's mass center's position in world */
+    ZFMETHOD_DECLARE_0(ZFUIPoint, p2_massCenterCur)
 
-    /** @brief see #p2_toLocal */
-    ZFMETHOD_DECLARE_0(zffloat, p2_rotationCurLocal)
-    /** @brief see #p2_toLocal */
-    ZFMETHOD_DECLARE_0(zffloat, p2_rotationVelocityCurLocal)
-
-    /** @brief see #p2_toLocal */
+    /** @brief see #p2_toLocal, the body's origin's position in world */
     ZFMETHOD_DECLARE_0(ZFUIPoint, p2_positionCur)
     /** @brief see #p2_toLocal */
     ZFMETHOD_DECLARE_0(ZFUIPoint, p2_positionVelocityCur)
@@ -825,19 +823,13 @@ public:
     /**
      * @brief transform from global to local of this body
      *
-     * #P2Body can holds child body,and child body would be applied with parent body's transform
+     * #P2Body can holds child body, and child body would be applied with parent body's transform
      * when adding to physics world,
      * you may use #p2_toLocal and #p2_toGlobal to calculate transform
      *
      * -  methods with local transform:
      *   - #p2_position
-     *   - #p2_positionVelocity
      *   - #p2_rotation
-     *   - #p2_rotationVelocity
-     *   - #p2_positionCurLocal
-     *   - #p2_positionVelocityCurLocal
-     *   - #p2_rotationCurLocal
-     *   - #p2_rotationVelocityCurLocal
      *   - #p2_bodyScale
      * -  methods with global transform:
      *   - #p2_positionCur
