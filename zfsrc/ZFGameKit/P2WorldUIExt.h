@@ -150,16 +150,6 @@ protected:
     zfoverride
     virtual void objectOnDeallocPrepare(void);
     zfoverride
-    virtual void observerOnAdd(ZF_IN zfidentity eventId) {
-        zfsuper::observerOnAdd(eventId);
-        ZFObserver::forwardOnAdd(zfcast(P2World *, this), eventId);
-    }
-    zfoverride
-    virtual void observerOnRemove(ZF_IN zfidentity eventId) {
-        ZFObserver::forwardOnRemove(zfcast(P2World *, this), eventId);
-        zfsuper::observerOnRemove(eventId);
-    }
-    zfoverride
     virtual void layoutOnLayout(ZF_IN const ZFUIRect &bounds);
 private:
     _ZFP_P2WorldViewPrivate *d;
