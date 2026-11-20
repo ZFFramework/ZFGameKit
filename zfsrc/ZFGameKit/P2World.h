@@ -629,6 +629,19 @@ ZFMETHOD_FUNC_DECLARE_3(ZFLIB_ZFGameKit, void, P2BodyTransformToGlobal
         , ZFMP_IN(const ZFCoreArray<P2BodyTransform> &, transforms)
         )
 
+/** @brief convert body's origin's position to body's mass center's position */
+ZFMETHOD_FUNC_DECLARE_3(ZFLIB_ZFGameKit, ZFUIPoint, P2BodyMassPosFromOriginPos
+        , ZFMP_IN(const ZFUIPoint &, originPos)
+        , ZFMP_IN(const ZFUIPoint &, massCenter)
+        , ZFMP_IN(zffloat, rotation)
+        )
+/** @brief convert body's mass center's position to body's origin's position */
+ZFMETHOD_FUNC_DECLARE_3(ZFLIB_ZFGameKit, ZFUIPoint, P2BodyMassPosToOriginPos
+        , ZFMP_IN(const ZFUIPoint &, massPos)
+        , ZFMP_IN(const ZFUIPoint &, massCenter)
+        , ZFMP_IN(zffloat, rotation)
+        )
+
 zfclassFwd _ZFP_P2BodyPrivate;
 /** @brief see #P2World */
 zfclass ZFLIB_ZFGameKit P2Body : zfextend ZFStyle {
@@ -808,17 +821,57 @@ public:
     ZFMETHOD_DECLARE_0(zffloat, p2_rotationInertia)
 
     /** @brief see #p2_massCenter, the body's mass center's position in world */
-    ZFMETHOD_DECLARE_0(ZFUIPoint, p2_massCenterCur)
+    ZFMETHOD_DECLARE_0(ZFUIPoint, p2_massPositionCur)
+    /** @brief see #p2_massPositionCur, do nothing if body impl not created */
+    ZFMETHOD_DECLARE_1(void, p2_massPositionCur
+            , ZFMP_IN(const ZFUIPoint &, v)
+            )
 
     /** @brief see #p2_toLocal, the body's origin's position in world */
     ZFMETHOD_DECLARE_0(ZFUIPoint, p2_positionCur)
+    /** @brief see #p2_toLocal, do nothing if body impl not created */
+    ZFMETHOD_DECLARE_1(void, p2_positionCur
+            , ZFMP_IN(const ZFUIPoint &, v)
+            )
     /** @brief see #p2_toLocal */
     ZFMETHOD_DECLARE_0(ZFUIPoint, p2_positionVelocityCur)
+    /** @brief see #p2_toLocal, do nothing if body impl not created */
+    ZFMETHOD_DECLARE_1(void, p2_positionVelocityCur
+            , ZFMP_IN(const ZFUIPoint &, v)
+            )
 
-    /** @brief see #p2_toLocal */
+    /** @brief see #p2_toLocal, note the rotation would around the body's origin */
     ZFMETHOD_DECLARE_0(zffloat, p2_rotationCur)
+    /** @brief see #p2_toLocal, do nothing if body impl not created */
+    ZFMETHOD_DECLARE_1(void, p2_rotationCur
+            , ZFMP_IN(zffloat, v)
+            )
     /** @brief see #p2_toLocal */
     ZFMETHOD_DECLARE_0(zffloat, p2_rotationVelocityCur)
+    /** @brief see #p2_toLocal, do nothing if body impl not created */
+    ZFMETHOD_DECLARE_1(void, p2_rotationVelocityCur
+            , ZFMP_IN(zffloat, v)
+            )
+
+    /**
+     * @brief util to update #p2_position and #p2_rotation with mass center position
+     *
+     * #p2_position and #p2_rotation is relative to body's origin,
+     * which is not convenient to build complex body tree,
+     * you may use this method to make things easier\n
+     * \n
+     * note #p2_shape and #p2_bodyScale should be prepared before calling this method,
+     * since it depends on #p2_massCenter\n
+     * \n
+     * massPos and rotation can be #P2_MAX:
+     * -  when both are #P2_MAX, do nothing
+     * -  when massPos is #P2_MAX, update rotation but keep current mass center
+     * -  when rotation is #P2_MAX, update mass center but keep current rotation
+     */
+    ZFMETHOD_DECLARE_2(void, p2_pos
+            , ZFMP_IN(const ZFUIPoint &, massPos)
+            , ZFMP_IN_OPT(zffloat, rotation, P2_MAX())
+            )
 
     /**
      * @brief transform from global to local of this body
@@ -831,12 +884,14 @@ public:
      *   - #p2_position
      *   - #p2_rotation
      *   - #p2_bodyScale
+     *   - #p2_massCenter
      * -  methods with global transform:
      *   - #p2_positionCur
      *   - #p2_positionVelocityCur
      *   - #p2_rotationCur
      *   - #p2_rotationVelocityCur
      *   - #p2_bodyScaleFixed
+     *   - #p2_massPositionCur
      */
     ZFMETHOD_DECLARE_2(void, p2_toLocal
             , ZFMP_OUT(P2BodyTransform &, transformLocal)
@@ -868,13 +923,6 @@ public:
     /** @brief see #P2World */
     ZFMETHOD_DECLARE_1(void, p2_sleeping
             , ZFMP_IN(zfbool, v)
-            )
-
-    /** @brief see #P2World */
-    ZFMETHOD_DECLARE_3(void, p2_moveTo
-            , ZFMP_IN(zftimet, duration)
-            , ZFMP_IN(const ZFUIPoint &, position)
-            , ZFMP_IN_OPT(zffloat, rotation, -1)
             )
 
     /** @brief see #P2World */

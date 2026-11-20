@@ -1957,6 +1957,33 @@ ZFMETHOD_FUNC_DEFINE_3(void, P2BodyTransformToGlobal
     _ZFP_P2BodyTransfrom::toGlobal(transformGlobal, transformLocal, transforms);
 }
 
+ZFMETHOD_FUNC_DEFINE_3(ZFUIPoint, P2BodyMassPosFromOriginPos
+        , ZFMP_IN(const ZFUIPoint &, originPos)
+        , ZFMP_IN(const ZFUIPoint &, massCenter)
+        , ZFMP_IN(zffloat, rotation)
+        ) {
+    zffloat rad = rotation * zfm_PI() / 180.0f;
+    zffloat rCos = zfm_cos(rad);
+    zffloat rSin = zfm_sin(rad);
+    return ZFUIPointCreate(
+            originPos.x + massCenter.x * rCos + massCenter.y * rSin
+            , originPos.y - massCenter.x * rSin + massCenter.y * rCos
+            );
+}
+ZFMETHOD_FUNC_DEFINE_3(ZFUIPoint, P2BodyMassPosToOriginPos
+        , ZFMP_IN(const ZFUIPoint &, massPos)
+        , ZFMP_IN(const ZFUIPoint &, massCenter)
+        , ZFMP_IN(zffloat, rotation)
+        ) {
+    zffloat rad = rotation * zfm_PI() / 180.0f;
+    zffloat rCos = zfm_cos(rad);
+    zffloat rSin = zfm_sin(rad);
+    return ZFUIPointCreate(
+            massPos.x - massCenter.x * rCos - massCenter.y * rSin
+            , massPos.y + massCenter.x * rSin - massCenter.y * rCos
+            );
+}
+
 // ============================================================
 ZFOBJECT_REGISTER(P2Body)
 
@@ -2209,12 +2236,23 @@ ZFMETHOD_DEFINE_0(P2Body, zffloat, p2_rotationInertia) {
     }
 }
 
-ZFMETHOD_DEFINE_0(P2Body, ZFUIPoint, p2_massCenterCur) {
+ZFMETHOD_DEFINE_0(P2Body, ZFUIPoint, p2_massPositionCur) {
     if(B2_IS_NON_NULL(_ZFP_P2Body_d->implBodyId)) {
         return b2Vec2ToZF(b2Body_GetWorldCenterOfMass(_ZFP_P2Body_d->implBodyId));
     }
     else {
         return this->p2_positionCur();
+    }
+}
+ZFMETHOD_DEFINE_1(P2Body, void, p2_massPositionCur
+        , ZFMP_IN(const ZFUIPoint &, v)
+        ) {
+    if(B2_IS_NON_NULL(_ZFP_P2Body_d->implBodyId)) {
+        this->p2_ownerWorld()->_ZFP_P2World_d->pendingBodyMove[this] = zftrue;
+        b2Body_SetTransform(_ZFP_P2Body_d->implBodyId
+                , b2Vec2FromZF(P2BodyMassPosToOriginPos(v, ZFUIPointApplyScale(this->p2_massCenter(), this->p2_bodyScaleFixed()), this->p2_rotationCur()))
+                , b2Body_GetRotation(_ZFP_P2Body_d->implBodyId)
+                );
     }
 }
 
@@ -2235,12 +2273,27 @@ ZFMETHOD_DEFINE_0(P2Body, ZFUIPoint, p2_positionCur) {
         }
     }
 }
+ZFMETHOD_DEFINE_1(P2Body, void, p2_positionCur
+        , ZFMP_IN(const ZFUIPoint &, v)
+        ) {
+    if(B2_IS_NON_NULL(_ZFP_P2Body_d->implBodyId)) {
+        this->p2_ownerWorld()->_ZFP_P2World_d->pendingBodyMove[this] = zftrue;
+        b2Body_SetTransform(_ZFP_P2Body_d->implBodyId, b2Vec2FromZF(v), b2Body_GetRotation(_ZFP_P2Body_d->implBodyId));
+    }
+}
 ZFMETHOD_DEFINE_0(P2Body, ZFUIPoint, p2_positionVelocityCur) {
     if(B2_IS_NON_NULL(_ZFP_P2Body_d->implBodyId)) {
         return b2Vec2ToZF(b2Body_GetLinearVelocity(_ZFP_P2Body_d->implBodyId));
     }
     else {
         return this->p2_positionVelocity();
+    }
+}
+ZFMETHOD_DEFINE_1(P2Body, void, p2_positionVelocityCur
+        , ZFMP_IN(const ZFUIPoint &, v)
+        ) {
+    if(B2_IS_NON_NULL(_ZFP_P2Body_d->implBodyId)) {
+        b2Body_SetLinearVelocity(_ZFP_P2Body_d->implBodyId, b2Vec2FromZF(v));
     }
 }
 ZFMETHOD_DEFINE_0(P2Body, zffloat, p2_rotationCur) {
@@ -2260,12 +2313,76 @@ ZFMETHOD_DEFINE_0(P2Body, zffloat, p2_rotationCur) {
         }
     }
 }
+ZFMETHOD_DEFINE_1(P2Body, void, p2_rotationCur
+        , ZFMP_IN(zffloat, v)
+        ) {
+    if(B2_IS_NON_NULL(_ZFP_P2Body_d->implBodyId)) {
+        this->p2_ownerWorld()->_ZFP_P2World_d->pendingBodyMove[this] = zftrue;
+        b2Body_SetTransform(_ZFP_P2Body_d->implBodyId, b2Body_GetPosition(_ZFP_P2Body_d->implBodyId), b2RotFromZF(v));
+    }
+}
 ZFMETHOD_DEFINE_0(P2Body, zffloat, p2_rotationVelocityCur) {
     if(B2_IS_NON_NULL(_ZFP_P2Body_d->implBodyId)) {
         return b2AngularVelocityToZF(b2Body_GetAngularVelocity(_ZFP_P2Body_d->implBodyId));
     }
     else {
         return this->p2_rotationVelocity();
+    }
+}
+ZFMETHOD_DEFINE_1(P2Body, void, p2_rotationVelocityCur
+        , ZFMP_IN(zffloat, v)
+        ) {
+    if(B2_IS_NON_NULL(_ZFP_P2Body_d->implBodyId)) {
+        b2Body_SetAngularVelocity(_ZFP_P2Body_d->implBodyId, b2AngularVelocityFromZF(v));
+    }
+}
+
+ZFMETHOD_DEFINE_2(P2Body, void, p2_pos
+        , ZFMP_IN(const ZFUIPoint &, massPos)
+        , ZFMP_IN_OPT(zffloat, rotation, P2_MAX())
+        ) {
+    if(massPos.x == P2_MAX() && massPos.y == P2_MAX()) {
+        if(rotation != P2_MAX()) {
+            this->p2_position(P2BodyMassPosToOriginPos(
+                        P2BodyMassPosFromOriginPos(this->p2_position(), this->p2_massCenter(), this->p2_rotation())
+                        , this->p2_massCenter()
+                        , rotation
+                        ));
+            this->p2_rotation(rotation);
+        }
+    }
+    else if(massPos.x == P2_MAX()) {
+        ZFUIPoint t;
+        t.x = P2BodyMassPosFromOriginPos(this->p2_position(), this->p2_massCenter(), this->p2_rotation()).x;
+        t.y = massPos.y;
+        if(rotation != P2_MAX()) {
+            this->p2_position(P2BodyMassPosToOriginPos(t, this->p2_massCenter(), rotation));
+            this->p2_rotation(rotation);
+        }
+        else {
+            this->p2_position(P2BodyMassPosToOriginPos(t, this->p2_massCenter(), this->p2_rotation()));
+        }
+    }
+    else if(massPos.y == P2_MAX()) {
+        ZFUIPoint t;
+        t.x = massPos.x;
+        t.y = P2BodyMassPosFromOriginPos(this->p2_position(), this->p2_massCenter(), this->p2_rotation()).y;
+        if(rotation != P2_MAX()) {
+            this->p2_position(P2BodyMassPosToOriginPos(t, this->p2_massCenter(), rotation));
+            this->p2_rotation(rotation);
+        }
+        else {
+            this->p2_position(P2BodyMassPosToOriginPos(t, this->p2_massCenter(), this->p2_rotation()));
+        }
+    }
+    else {
+        if(rotation != P2_MAX()) {
+            this->p2_position(P2BodyMassPosToOriginPos(massPos, this->p2_massCenter(), rotation));
+            this->p2_rotation(rotation);
+        }
+        else {
+            this->p2_position(P2BodyMassPosToOriginPos(massPos, this->p2_massCenter(), this->p2_rotation()));
+        }
     }
 }
 
@@ -2312,23 +2429,6 @@ ZFMETHOD_DEFINE_1(P2Body, void, p2_sleeping
         ) {
     if(B2_IS_NON_NULL(_ZFP_P2Body_d->implBodyId)) {
         b2Body_SetAwake(_ZFP_P2Body_d->implBodyId, !v);
-    }
-}
-ZFMETHOD_DEFINE_3(P2Body, void, p2_moveTo
-        , ZFMP_IN(zftimet, duration)
-        , ZFMP_IN(const ZFUIPoint &, position)
-        , ZFMP_IN_OPT(zffloat, rotation, -1)
-        ) {
-    if(B2_IS_NON_NULL(_ZFP_P2Body_d->implBodyId)) {
-        b2Transform implTransform;
-        implTransform.p = b2Vec2FromZF(position);
-        if(rotation >= 0) {
-            implTransform.q = b2RotFromZF(rotation);
-        }
-        else {
-            implTransform.q = b2Body_GetRotation(_ZFP_P2Body_d->implBodyId);
-        }
-        b2Body_SetTargetTransform(_ZFP_P2Body_d->implBodyId, implTransform, duration);
     }
 }
 
@@ -3425,6 +3525,7 @@ static void _ZFP_P2JointDetach(ZF_IN P2Joint *joint) {
         joint->p2_ownerBody0()->_ZFP_P2Body_d->bodyRefJointList->removeElement(joint);
         joint->p2_ownerBody1()->_ZFP_P2Body_d->bodyRefJointList->removeElement(joint);
         b2DestroyJoint(joint->_ZFP_P2Joint_d->implJointId);
+        joint->_ZFP_P2Joint_d->implJointId = b2_nullJointId;
     }
     if(ownerWorld) {
         ownerWorld->_ZFP_P2World_d->pendingJoint.erase(joint);
