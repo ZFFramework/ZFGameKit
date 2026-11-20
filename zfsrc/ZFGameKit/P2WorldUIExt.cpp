@@ -29,6 +29,7 @@ public:
     , screenTileUpdateMode(ScreenTileUpdateByUI)
     , screenTileUpdateParam()
     {
+        container->viewUIEnableTree(zffalse);
     }
     ~_ZFP_P2WorldViewPrivate(void) {
         zfobjRelease(container);

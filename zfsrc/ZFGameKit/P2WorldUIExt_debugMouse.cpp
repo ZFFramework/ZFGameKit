@@ -488,10 +488,16 @@ protected:
     }
 };
 
-zfclass _ZFP_I_P2DebugMouse : zfextend ZFUIView {
-    ZFOBJECT_DECLARE(_ZFP_I_P2DebugMouse, ZFUIView)
+zfclass _ZFP_I_P2DebugMouse : zfextend ZFObject {
+    ZFOBJECT_DECLARE(_ZFP_I_P2DebugMouse, ZFObject)
 public:
     P2World *world;
+public:
+    ZFMETHOD_INLINE_1(void, onMouseEvent
+            , ZFMP_IN(const ZFArgs &, zfargs)
+            ) {
+        _mouseEvent(zfargs.param0());
+    }
 private:
     zfautoT<_ZFP_I_P2DebugMouseCtrl> _ctrl;
 protected:
@@ -500,10 +506,15 @@ protected:
         _ctrlDetach();
         zfsuper::objectOnDeallocPrepare();
     }
-    zfoverride
-    virtual void viewEventOnMouseEvent(ZF_IN ZFUIMouseEvent *mouseEvent) {
-        if(_ctrl && !_ctrl->update(mouseEvent->mouseAction, mouseEvent->mousePoint.x, mouseEvent->mousePoint.y)) {
-            _ctrlDetach();
+private:
+    void _mouseEvent(ZF_IN ZFUIMouseEvent *mouseEvent) {
+        if(_ctrl) {
+            if(_ctrl->update(mouseEvent->mouseAction, mouseEvent->mousePoint.x, mouseEvent->mousePoint.y)) {
+                mouseEvent->eventResolved(zftrue);
+            }
+            else {
+                _ctrlDetach();
+            }
         }
         if(!_ctrl && mouseEvent->mouseAction == v_ZFUIMouseAction::e_Down) {
             ZFLISTENER_0(impl) {
@@ -515,15 +526,15 @@ protected:
                     , impl
                     );
             if(touched) {
+                mouseEvent->eventResolved(zftrue);
                 _ctrlAttach(touched->p2_ownerBody());
             }
         }
     }
-private:
     void _ctrlAttach(ZF_IN P2Body *body) {
         _ctrl = zfobj<_ZFP_I_P2DebugMouseCtrl>();
         _ctrl->target(body);
-        this->child(_ctrl);
+        zfcast(ZFUIView *, this->world)->internalFgView(_ctrl);
         _ctrl->targetPosUpdate();
 
         this->world->observerAdd(P2World::E_P2BodyMoveEvent(), ZFCallbackForFunc(zfself::_bodyOnMove));
@@ -569,13 +580,20 @@ static void _ZFP_P2DebugMouseAttach(ZF_IN P2WorldView *worldView) {
         zfobj<_ZFP_I_P2DebugMouse> t;
         t->world = zfcast(P2World *, worldView);
         worldView->objectTag("_ZFP_I_P2DebugMouse", t);
-        worldView->internalFgView(t)->sizeFill();
+        worldView->observerAdd(
+                ZFUIView::E_ViewOnMouseEvent()
+                , ZFCallbackForMemberMethod(t, ZFMethodAccess(_ZFP_I_P2DebugMouse, onMouseEvent))
+                , ZFLevelZFFrameworkNormal
+                );
     }
 }
 static void _ZFP_P2DebugMouseDetach(ZF_IN P2WorldView *worldView) {
     zfautoT<_ZFP_I_P2DebugMouse> d = worldView->objectTagRemoveAndGet("_ZFP_I_P2DebugMouse");
     if(d) {
-        d->removeFromParent();
+        worldView->observerRemove(
+                ZFUIView::E_ViewOnMouseEvent()
+                , ZFCallbackForMemberMethod(d, ZFMethodAccess(_ZFP_I_P2DebugMouse, onMouseEvent))
+                );
     }
 }
 

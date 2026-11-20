@@ -44,6 +44,10 @@ public:
             , ZFMP_IN(zffloat, y)
             )
 
+public:
+    ZFPROPERTY_ON_INIT_DECLARE(zfbool, viewUIEnable)
+    ZFPROPERTY_ON_INIT_DECLARE(zfbool, viewUIEnableTree)
+
 protected:
     zfoverride
     virtual void onDraw(void);

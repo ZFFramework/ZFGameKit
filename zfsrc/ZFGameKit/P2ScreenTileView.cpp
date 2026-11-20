@@ -37,6 +37,13 @@ ZFMETHOD_DEFINE_2(P2ScreenTileView, void, tileOffsetStep
     this->tileOffset(ZFUIPointCreate(_tileOffset.x + x, _tileOffset.y + y));
 }
 
+ZFPROPERTY_ON_INIT_DEFINE(P2ScreenTileView, zfbool, viewUIEnable) {
+    propertyValue = zffalse;
+}
+ZFPROPERTY_ON_INIT_DEFINE(P2ScreenTileView, zfbool, viewUIEnableTree) {
+    propertyValue = zffalse;
+}
+
 void P2ScreenTileView::onDraw(void) {
     zfsuper::onDraw();
     zfautoT<ZFUIImage> tile = this->tileImage();
