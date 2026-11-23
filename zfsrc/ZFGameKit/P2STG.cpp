@@ -3,26 +3,26 @@
 
 ZF_NAMESPACE_GLOBAL_BEGIN
 
-ZFOBJECT_REGISTER(P2MoverForVelocity)
+ZFOBJECT_REGISTER(P2MoverForDPad)
 
-ZFPROPERTY_ON_UPDATE_DEFINE(P2MoverForVelocity, zffloat, p2_velocity) {
+ZFPROPERTY_ON_UPDATE_DEFINE(P2MoverForDPad, zffloat, p2_velocity) {
     if(propertyValue <= 0) {
         propertyValue = 5;
     }
 }
 
-ZFMETHOD_DEFINE_2(P2MoverForVelocity, void, p2_move
+ZFMETHOD_DEFINE_2(P2MoverForDPad, void, p2_move
         , ZFMP_IN(zffloat, x)
         , ZFMP_IN(zffloat, y)
         ) {
     _x = x;
     _y = y;
 }
-void P2MoverForVelocity::p2_extAttach(ZF_IN P2Body *owner, ZF_IN_OUT zfbool &listenOnUpdate) {
+void P2MoverForDPad::p2_extAttach(ZF_IN P2Body *owner, ZF_IN_OUT zfbool &listenOnUpdate) {
     zfsuper::p2_extAttach(owner, listenOnUpdate);
     listenOnUpdate = zftrue;
 }
-void P2MoverForVelocity::p2_extUpdate(ZF_IN P2Body *owner) {
+void P2MoverForDPad::p2_extUpdate(ZF_IN P2Body *owner) {
     zfsuper::p2_extUpdate(owner);
     zffloat x = 0;
     zffloat y = 0;

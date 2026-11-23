@@ -2742,7 +2742,9 @@ ZFMETHOD_DEFINE_1(P2Body, void, p2_ext
         ) {
     ZFCoreAssert(v && v->p2_ownerBody() == zfnull);
     this->p2_extList()->add(v);
-    _ZFP_P2ExtAttach(this, v);
+    if(B2_IS_NON_NULL(_ZFP_P2Body_d->implBodyId)) {
+        _ZFP_P2ExtAttach(this, v);
+    }
 }
 ZFMETHOD_DEFINE_0(P2Body, zfindex, p2_extCount) {
     return this->p2_extList()->count();
@@ -2757,7 +2759,9 @@ ZFMETHOD_DEFINE_1(P2Body, zfautoT<P2Ext>, p2_extRemoveAt
         ) {
     zfautoT<P2Ext> v = this->p2_extList()->get(index);
     this->p2_extList()->remove(index);
-    _ZFP_P2ExtDetach(v);
+    if(B2_IS_NON_NULL(_ZFP_P2Body_d->implBodyId)) {
+        _ZFP_P2ExtDetach(v);
+    }
     return v;
 }
 ZFMETHOD_DEFINE_1(P2Body, zfautoT<P2Ext>, p2_extRemove
@@ -2768,7 +2772,9 @@ ZFMETHOD_DEFINE_1(P2Body, zfautoT<P2Ext>, p2_extRemove
         return zfnull;
     }
     zfautoT<P2Ext> item = this->p2_extList()->removeAndGet(index);
-    _ZFP_P2ExtDetach(item);
+    if(B2_IS_NON_NULL(_ZFP_P2Body_d->implBodyId)) {
+        _ZFP_P2ExtDetach(item);
+    }
     return item;
 }
 ZFMETHOD_DEFINE_0(P2Body, void, p2_extRemoveAll) {
@@ -2776,7 +2782,9 @@ ZFMETHOD_DEFINE_0(P2Body, void, p2_extRemoveAll) {
     if(!l->isEmpty()) {
         for(zfindex i = l->count() - 1; i != zfindexMax(); --i) {
             P2Ext *item = l->get(i);
-            _ZFP_P2ExtDetach(item);
+            if(B2_IS_NON_NULL(_ZFP_P2Body_d->implBodyId)) {
+                _ZFP_P2ExtDetach(item);
+            }
         }
         l->removeAll();
     }
@@ -2809,7 +2817,9 @@ ZFMETHOD_DEFINE_1(P2Body, P2Ext *, p2_extAccess
     zfautoT<P2Ext> v = extCls->newInstance();
     ZFCoreAssert(v);
     this->p2_extList()->add(v);
-    _ZFP_P2ExtAttach(this, v);
+    if(B2_IS_NON_NULL(_ZFP_P2Body_d->implBodyId)) {
+        _ZFP_P2ExtAttach(this, v);
+    }
     return v;
 }
 
@@ -2853,7 +2863,9 @@ void P2Body::objectOnInit(void) {
             {
                 ZFArray *l = owner->p2_extList();
                 for(zfindex i = 0, count = l->count(); i < count; ++i) {
-                    _ZFP_P2ExtAttach(owner, l->get(i));
+                    if(B2_IS_NON_NULL(owner->_ZFP_P2Body_d->implBodyId)) {
+                        _ZFP_P2ExtAttach(owner, l->get(i));
+                    }
                 }
             }
         }
@@ -3685,6 +3697,13 @@ static void _ZFP_P2BodyImplCreate(ZF_IN P2World *world, ZF_IN P2Body *body) {
         world->observerNotify(P2World::E_P2BodyAttach(), ZFArgs()
                 .param0(body)
                 );
+    }
+
+    {
+        ZFArray *l = body->p2_extList();
+        for(zfindex i = 0; i < l->count(); ++i) {
+            _ZFP_P2ExtAttach(body, l->get(i));
+        }
     }
 }
 

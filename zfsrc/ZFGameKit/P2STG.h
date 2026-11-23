@@ -12,8 +12,8 @@ ZF_NAMESPACE_GLOBAL_BEGIN
 /**
  * @brief helper to move #P2Body with velocity
  */
-zfclass ZFLIB_ZFGameKit P2MoverForVelocity : zfextend P2Ext {
-    ZFOBJECT_DECLARE_WITH_CUSTOM_CTOR(P2MoverForVelocity, P2Ext)
+zfclass ZFLIB_ZFGameKit P2MoverForDPad : zfextend P2Ext {
+    ZFOBJECT_DECLARE_WITH_CUSTOM_CTOR(P2MoverForDPad, P2Ext)
 
 public:
     /** @brief velocity when moving unit */
@@ -55,7 +55,7 @@ private:
     zfint _fade;
 protected:
     /** @cond ZFPrivateDoc */
-    P2MoverForVelocity(void) : _x(0), _y(0), _xPrev(0), _yPrev(0), _fade(0) {}
+    P2MoverForDPad(void) : _x(0), _y(0), _xPrev(0), _yPrev(0), _fade(0) {}
     /** @endcond */
 };
 

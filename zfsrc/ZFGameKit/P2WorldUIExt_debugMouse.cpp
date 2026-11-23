@@ -496,7 +496,7 @@ public:
     ZFMETHOD_INLINE_1(void, onMouseEvent
             , ZFMP_IN(const ZFArgs &, zfargs)
             ) {
-        _mouseEvent(zfargs.param0());
+        _mouseEvent(zfargs, zfargs.param0());
     }
 private:
     zfautoT<_ZFP_I_P2DebugMouseCtrl> _ctrl;
@@ -507,10 +507,11 @@ protected:
         zfsuper::objectOnDeallocPrepare();
     }
 private:
-    void _mouseEvent(ZF_IN ZFUIMouseEvent *mouseEvent) {
+    void _mouseEvent(ZF_IN const ZFArgs &zfargs, ZF_IN ZFUIMouseEvent *mouseEvent) {
         if(_ctrl) {
             if(_ctrl->update(mouseEvent->mouseAction, mouseEvent->mousePoint.x, mouseEvent->mousePoint.y)) {
                 mouseEvent->eventResolved(zftrue);
+                zfargs.eventFiltered(zftrue);
             }
             else {
                 _ctrlDetach();
@@ -527,6 +528,7 @@ private:
                     );
             if(touched) {
                 mouseEvent->eventResolved(zftrue);
+                zfargs.eventFiltered(zftrue);
                 _ctrlAttach(touched->p2_ownerBody());
             }
         }
