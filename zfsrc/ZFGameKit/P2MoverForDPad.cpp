@@ -1,4 +1,4 @@
-#include "P2STG.h"
+#include "P2MoverForDPad.h"
 #include "P2GamePad.h"
 
 ZF_NAMESPACE_GLOBAL_BEGIN
@@ -11,12 +11,13 @@ ZFPROPERTY_ON_UPDATE_DEFINE(P2MoverForDPad, zffloat, p2_velocity) {
     }
 }
 
-ZFMETHOD_DEFINE_2(P2MoverForDPad, void, p2_move
-        , ZFMP_IN(zffloat, x)
-        , ZFMP_IN(zffloat, y)
+ZFMETHOD_DEFINE_1(P2MoverForDPad, void, p2_move
+        , ZFMP_IN(const ZFUIPoint &, v)
         ) {
-    _x = x;
-    _y = y;
+    _move = v;
+}
+ZFMETHOD_DEFINE_0(P2MoverForDPad, const ZFUIPoint &, p2_move) {
+    return _move;
 }
 void P2MoverForDPad::p2_extAttach(ZF_IN P2Body *owner, ZF_IN_OUT zfbool &listenOnUpdate) {
     zfsuper::p2_extAttach(owner, listenOnUpdate);
@@ -26,9 +27,9 @@ void P2MoverForDPad::p2_extUpdate(ZF_IN P2Body *owner) {
     zfsuper::p2_extUpdate(owner);
     zffloat x = 0;
     zffloat y = 0;
-    if(_x != 0 || _y != 0) {
-        x = _x;
-        y = _y;
+    if(_move.x != 0 || _move.y != 0) {
+        x = _move.x;
+        y = _move.y;
     }
     else {
         zfindex padIndex = this->p2_gamePadIndex();
@@ -54,8 +55,8 @@ void P2MoverForDPad::p2_extUpdate(ZF_IN P2Body *owner) {
 
     zfint fadeFrame = (zfint)this->p2_fadeFrame();
     if(x != 0 || y != 0) {
-        _xPrev = x;
-        _yPrev = y;
+        _prev.x = x;
+        _prev.y = y;
         if(fadeFrame != 0) {
             if(_fade < 0) {
                 if(_fade > -fadeFrame) {
@@ -92,10 +93,10 @@ void P2MoverForDPad::p2_extUpdate(ZF_IN P2Body *owner) {
                 }
             }
         }
-        if(_fade > -fadeFrame && (_xPrev || _yPrev)) {
+        if(_fade > -fadeFrame && (_prev.x || _prev.y)) {
             zffloat v = this->p2_velocity() * this->p2_ownerBody()->p2_bodyScaleFixed() * (1 + (zffloat)_fade / fadeFrame);
-            x = _xPrev;
-            y = _yPrev;
+            x = _prev.x;
+            y = _prev.y;
             zffloat t = v / zfm_sqrt(x * x + y * y);
             this->p2_ownerBody()->p2_positionVelocity(ZFUIPointCreate(x * t, y * t));
         }

@@ -1,16 +1,16 @@
 /**
- * @file P2STG.h
- * @brief shooting game util
+ * @file P2MoverForDPad.h
+ * @brief P2Ext to move #P2Body with DPad
  */
 
-#ifndef _ZFI_P2STG_h_
-#define _ZFI_P2STG_h_
+#ifndef _ZFI_P2MoverForDPad_h_
+#define _ZFI_P2MoverForDPad_h_
 
 #include "P2World.h"
 ZF_NAMESPACE_GLOBAL_BEGIN
 
 /**
- * @brief helper to move #P2Body with velocity
+ * @brief P2Ext to move #P2Body with DPad
  */
 zfclass ZFLIB_ZFGameKit P2MoverForDPad : zfextend P2Ext {
     ZFOBJECT_DECLARE_WITH_CUSTOM_CTOR(P2MoverForDPad, P2Ext)
@@ -34,12 +34,13 @@ public:
      *
      * after called, unit would keep moving with (x, y) direction of #velocity,
      * ignoring #p2_gamePadIndex,
-     * until manually call move(0, 0) to stop
+     * until manually call p2_move(ZFUIPointZero()) to stop
      */
-    ZFMETHOD_DECLARE_2(void, p2_move
-            , ZFMP_IN(zffloat, x)
-            , ZFMP_IN(zffloat, y)
+    ZFMETHOD_DECLARE_1(void, p2_move
+            , ZFMP_IN(const ZFUIPoint &, v)
             )
+    /** @brief see #p2_move */
+    ZFMETHOD_DECLARE_0(const ZFUIPoint &, p2_move)
 
 protected:
     zfoverride
@@ -48,17 +49,15 @@ protected:
     virtual void p2_extUpdate(ZF_IN P2Body *owner);
 
 private:
-    zffloat _x;
-    zffloat _y;
-    zffloat _xPrev;
-    zffloat _yPrev;
+    ZFUIPoint _move;
+    ZFUIPoint _prev;
     zfint _fade;
 protected:
     /** @cond ZFPrivateDoc */
-    P2MoverForDPad(void) : _x(0), _y(0), _xPrev(0), _yPrev(0), _fade(0) {}
+    P2MoverForDPad(void) : _move(), _prev(), _fade(0) {}
     /** @endcond */
 };
 
 ZF_NAMESPACE_GLOBAL_END
-#endif // #ifndef _ZFI_P2STG_h_
+#endif // #ifndef _ZFI_P2MoverForDPad_h_
 

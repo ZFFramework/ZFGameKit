@@ -18,18 +18,14 @@ inline zffloat P2_MAX(void) {
 }
 
 /** @brief see #P2World */
-#define P2FilterMaskAll() ((zfflags)-1)
+#define P2CategoryMaskAll() ((zfflags)-1)
 /** @brief see #P2World */
-#define P2FilterCategoryDefault() ((zfflags)0x80000000)
-/** @brief see #P2World */
-#define P2FilterMaskDefault() P2FilterMaskAll()
+#define P2CategoryDefault() ((zfflags)0x80000000)
 
 /** @brief see #P2World */
-ZFEXPORT_VAR_READONLY_DECLARE(ZFLIB_ZFGameKit, zfflags, P2FilterMaskAll)
+ZFEXPORT_VAR_READONLY_DECLARE(ZFLIB_ZFGameKit, zfflags, P2CategoryMaskAll)
 /** @brief see #P2World */
-ZFEXPORT_VAR_READONLY_DECLARE(ZFLIB_ZFGameKit, zfflags, P2FilterCategoryDefault)
-/** @brief see #P2World */
-ZFEXPORT_VAR_READONLY_DECLARE(ZFLIB_ZFGameKit, zfflags, P2FilterMaskDefault)
+ZFEXPORT_VAR_READONLY_DECLARE(ZFLIB_ZFGameKit, zfflags, P2CategoryDefault)
 
 // ============================================================
 zfclassFwd _ZFP_P2ShapePrivate;
@@ -59,14 +55,14 @@ public:
     ZFPROPERTY_ON_UPDATE_DECLARE(zfbool, p2_contactEnable)
 
     /** @brief see #P2World, what category this shape is */
-    ZFPROPERTY_ASSIGN(zfflags, p2_filterCategory, P2FilterCategoryDefault())
-    ZFPROPERTY_ON_UPDATE_DECLARE(zfflags, p2_filterCategory)
+    ZFPROPERTY_ASSIGN(zfflags, p2_category, P2CategoryDefault())
+    ZFPROPERTY_ON_UPDATE_DECLARE(zfflags, p2_category)
     /** @brief see #P2World, what type should be contact with this shape */
-    ZFPROPERTY_ASSIGN(zfflags, p2_filterMask, P2FilterMaskDefault())
-    ZFPROPERTY_ON_UPDATE_DECLARE(zfflags, p2_filterMask)
+    ZFPROPERTY_ASSIGN(zfflags, p2_categoryMask, P2CategoryMaskAll())
+    ZFPROPERTY_ON_UPDATE_DECLARE(zfflags, p2_categoryMask)
     /** @brief see #P2World, always contact (>0) or never contact (<0) within same group */
-    ZFPROPERTY_ASSIGN(zfint, p2_filterGroup, 0)
-    ZFPROPERTY_ON_UPDATE_DECLARE(zfint, p2_filterGroup)
+    ZFPROPERTY_ASSIGN(zfint, p2_categoryGroup, 0)
+    ZFPROPERTY_ON_UPDATE_DECLARE(zfint, p2_categoryGroup)
 
     /** @brief see #P2World, range in [0, 1] */
     ZFPROPERTY_ASSIGN(zffloat, p2_matFriction, 0.6f)
@@ -215,6 +211,20 @@ public:
 };
 
 // ============================================================
+/** @brief see #P2World */
+ZFEXPORT_VAR_DECLARE(ZFLIB_ZFGameKit, zffloat, P2JointForceDefault)
+/** @brief see #P2World */
+ZFEXPORT_VAR_DECLARE(ZFLIB_ZFGameKit, zffloat, P2JointForceHard)
+/** @brief see #P2World */
+ZFEXPORT_VAR_DECLARE(ZFLIB_ZFGameKit, zffloat, P2JointTorqueDefault)
+/** @brief see #P2World */
+ZFEXPORT_VAR_DECLARE(ZFLIB_ZFGameKit, zffloat, P2JointTorqueHard)
+/** @brief see #P2World */
+ZFEXPORT_VAR_DECLARE(ZFLIB_ZFGameKit, zffloat, P2JointHertzDefault)
+/** @brief see #P2World */
+ZFEXPORT_VAR_DECLARE(ZFLIB_ZFGameKit, zffloat, P2JointDampingDefault)
+
+// ============================================================
 zfclassFwd _ZFP_P2JointPrivate;
 /** @brief see #P2World */
 zfabstract ZFLIB_ZFGameKit P2Joint : zfextend ZFStyle {
@@ -237,10 +247,18 @@ public:
     /** @brief see #P2World */
     ZFPROPERTY_ASSIGN(zfstring, p2_jointId)
 
-    /** @brief see #P2World::p2_bodyFind, #P2Body::p2_bodyFind */
+    /**
+     * @brief see #P2World::p2_bodyFind, #P2Body::p2_bodyFind
+     *
+     * p2_bodyId0 should be the main body that affect #p2_bodyId1
+     */
     ZFPROPERTY_ASSIGN(zfstring, p2_bodyId0)
     ZFPROPERTY_ON_UPDATE_DECLARE(zfstring, p2_bodyId0)
-    /** @brief see #P2World::p2_bodyFind, #P2Body::p2_bodyFind */
+    /**
+     * @brief see #P2World::p2_bodyFind, #P2Body::p2_bodyFind
+     *
+     * p2_bodyId1 should be the secondary body that be controlled by #p2_bodyId0
+     */
     ZFPROPERTY_ASSIGN(zfstring, p2_bodyId1)
     ZFPROPERTY_ON_UPDATE_DECLARE(zfstring, p2_bodyId1)
 
@@ -248,9 +266,58 @@ public:
     ZFPROPERTY_ASSIGN(zfbool, p2_contactEnable)
     ZFPROPERTY_ON_UPDATE_DECLARE(zfbool, p2_contactEnable)
 
+    /** @brief see #P2World */
+    ZFPROPERTY_ASSIGN(ZFUIPoint, p2_anchor0)
+    ZFPROPERTY_ON_UPDATE_DECLARE(ZFUIPoint, p2_anchor0)
+    /** @brief see #P2World */
+    ZFPROPERTY_ASSIGN(ZFUIPoint, p2_anchor1)
+    ZFPROPERTY_ON_UPDATE_DECLARE(ZFUIPoint, p2_anchor1)
+
+    /** @brief see #P2World */
+    ZFPROPERTY_ASSIGN(zffloat, p2_anchorRotation0)
+    ZFPROPERTY_ON_UPDATE_DECLARE(zffloat, p2_anchorRotation0)
+    /** @brief see #P2World */
+    ZFPROPERTY_ASSIGN(zffloat, p2_anchorRotation1)
+    ZFPROPERTY_ON_UPDATE_DECLARE(zffloat, p2_anchorRotation1)
+
 public:
     /** @brief see #P2World, whether impl has attached to world */
     ZFMETHOD_DECLARE_0(zfbool, p2_implAttached)
+
+    /**
+     * @brief mark this joint as private joint, which won't be included in #P2World::p2_jointList
+     *
+     * sometimes, you may want to create temporary private joints (for example, create by #P2Ext),
+     * and don't want them to be managed or serialized by the owner world,
+     * you may use this method to mark as private joint\n
+     * a private joint would:
+     * -  act as normal joints
+     * -  not included in #P2World::p2_jointList nor in #P2Body::p2_jointList
+     * -  once marked as private, can not unmark
+     */
+    ZFMETHOD_DECLARE_0(void, p2_privateMark)
+    /** @brief see #p2_privateMark */
+    ZFMETHOD_DECLARE_0(zfbool, p2_private)
+
+    /**
+     * @brief explicitly set associated body, use only if necessary
+     *
+     * for most case, it's recommended to use #p2_bodyId0 instead,
+     * this method was designed only for temporary private joints,
+     * see #p2_privateMark\n
+     * when setting body this way, #p2_privateMark would be automatically called
+     */
+    ZFMETHOD_DECLARE_1(void, p2_body0
+            , ZFMP_IN(P2Body *, v)
+            )
+    /** @brief see #p2_body0 */
+    ZFMETHOD_DECLARE_0(P2Body *, p2_body0)
+    /** @brief see #p2_body0 */
+    ZFMETHOD_DECLARE_1(void, p2_body1
+            , ZFMP_IN(P2Body *, v)
+            )
+    /** @brief see #p2_body0 */
+    ZFMETHOD_DECLARE_0(P2Body *, p2_body1)
 
 protected:
     /** @brief init with body id */
@@ -276,27 +343,9 @@ public:
 };
 
 /** @brief see #P2World */
-ZFEXPORT_VAR_DECLARE(ZFLIB_ZFGameKit, zffloat, P2JointSpringHertzSoft)
-/** @brief see #P2World */
-ZFEXPORT_VAR_DECLARE(ZFLIB_ZFGameKit, zffloat, P2JointSpringDampingSoft)
-/** @brief see #P2World */
-ZFEXPORT_VAR_DECLARE(ZFLIB_ZFGameKit, zffloat, P2JointSpringHertzNormal)
-/** @brief see #P2World */
-ZFEXPORT_VAR_DECLARE(ZFLIB_ZFGameKit, zffloat, P2JointSpringDampingNormal)
-/** @brief see #P2World */
-ZFEXPORT_VAR_DECLARE(ZFLIB_ZFGameKit, zffloat, P2JointSpringHertzHard)
-/** @brief see #P2World */
-ZFEXPORT_VAR_DECLARE(ZFLIB_ZFGameKit, zffloat, P2JointSpringDampingHard)
-
-/** @brief see #P2World */
 zfabstract ZFLIB_ZFGameKit P2JointSpring : zfextend P2Joint {
     ZFOBJECT_DECLARE_ABSTRACT(P2JointSpring, P2Joint)
 public:
-    /** @brief see #P2World */
-    ZFPROPERTY_ASSIGN(ZFUIPoint, p2_anchor0)
-    /** @brief see #P2World */
-    ZFPROPERTY_ASSIGN(ZFUIPoint, p2_anchor1)
-
     /** @brief see #P2World, usually [0, 60], how many times to update spring for each second */
     ZFPROPERTY_ASSIGN(zffloat, p2_springHertz, 0)
     /** @brief see #P2World, [0, 1], from soft to hard, how effective the spring is */
@@ -329,8 +378,6 @@ public:
     ZFPROPERTY_ASSIGN(zffloat, p2_distanceLimitMax, P2_MAX())
     ZFPROPERTY_ON_UPDATE_DECLARE(zffloat, p2_distanceLimitMax)
 
-    ZFPROPERTY_ON_UPDATE_DECLARE(ZFUIPoint, p2_anchor0)
-    ZFPROPERTY_ON_UPDATE_DECLARE(ZFUIPoint, p2_anchor1)
     ZFPROPERTY_ON_UPDATE_DECLARE(zffloat, p2_springHertz)
     ZFPROPERTY_ON_UPDATE_DECLARE(zffloat, p2_springDamping)
     ZFPROPERTY_ON_UPDATE_DECLARE(zffloat, p2_motorSpeed)
@@ -346,9 +393,6 @@ zfclass ZFLIB_ZFGameKit P2JointRevolute : zfextend P2JointSpring {
     ZFOBJECT_DECLARE(P2JointRevolute, P2JointSpring)
 public:
     /** @brief see #P2World */
-    ZFPROPERTY_ASSIGN(zffloat, p2_angularRef)
-    ZFPROPERTY_ON_UPDATE_DECLARE(zffloat, p2_angularRef)
-    /** @brief see #P2World */
     ZFPROPERTY_ASSIGN(zffloat, p2_angular)
     ZFPROPERTY_ON_UPDATE_DECLARE(zffloat, p2_angular)
     /** @brief see #P2World */
@@ -360,8 +404,6 @@ public:
     ZFPROPERTY_ASSIGN(zffloat, p2_angularLimitMax, P2_MAX())
     ZFPROPERTY_ON_UPDATE_DECLARE(zffloat, p2_angularLimitMax)
 
-    ZFPROPERTY_ON_UPDATE_DECLARE(ZFUIPoint, p2_anchor0)
-    ZFPROPERTY_ON_UPDATE_DECLARE(ZFUIPoint, p2_anchor1)
     ZFPROPERTY_ON_UPDATE_DECLARE(zffloat, p2_springHertz)
     ZFPROPERTY_ON_UPDATE_DECLARE(zffloat, p2_springDamping)
     ZFPROPERTY_ON_UPDATE_DECLARE(zffloat, p2_motorSpeed)
@@ -377,12 +419,6 @@ zfclass ZFLIB_ZFGameKit P2JointPrismatic : zfextend P2JointSpring {
     ZFOBJECT_DECLARE(P2JointPrismatic, P2JointSpring)
 public:
     /** @brief see #P2World */
-    ZFPROPERTY_ASSIGN(ZFUIPoint, p2_axis, ZFUIPointCreate(1, 0))
-    ZFPROPERTY_ON_UPDATE_DECLARE(ZFUIPoint, p2_axis)
-    /** @brief see #P2World */
-    ZFPROPERTY_ASSIGN(zffloat, p2_angularRef)
-    ZFPROPERTY_ON_UPDATE_DECLARE(zffloat, p2_angularRef)
-    /** @brief see #P2World */
     ZFPROPERTY_ASSIGN(zffloat, p2_distance)
     ZFPROPERTY_ON_UPDATE_DECLARE(zffloat, p2_distance)
     /** @brief see #P2World */
@@ -394,8 +430,6 @@ public:
     ZFPROPERTY_ASSIGN(zffloat, p2_distanceLimitMax, P2_MAX())
     ZFPROPERTY_ON_UPDATE_DECLARE(zffloat, p2_distanceLimitMax)
 
-    ZFPROPERTY_ON_UPDATE_DECLARE(ZFUIPoint, p2_anchor0)
-    ZFPROPERTY_ON_UPDATE_DECLARE(ZFUIPoint, p2_anchor1)
     ZFPROPERTY_ON_UPDATE_DECLARE(zffloat, p2_springHertz)
     ZFPROPERTY_ON_UPDATE_DECLARE(zffloat, p2_springDamping)
     ZFPROPERTY_ON_UPDATE_DECLARE(zffloat, p2_motorSpeed)
@@ -411,17 +445,12 @@ zfclass ZFLIB_ZFGameKit P2JointWheel : zfextend P2JointSpring {
     ZFOBJECT_DECLARE(P2JointWheel, P2JointSpring)
 public:
     /** @brief see #P2World */
-    ZFPROPERTY_ASSIGN(ZFUIPoint, p2_axis)
-    ZFPROPERTY_ON_UPDATE_DECLARE(ZFUIPoint, p2_axis)
-    /** @brief see #P2World */
     ZFPROPERTY_ASSIGN(zffloat, p2_distanceLimitMin, -P2_MAX())
     ZFPROPERTY_ON_UPDATE_DECLARE(zffloat, p2_distanceLimitMin)
     /** @brief see #P2World */
     ZFPROPERTY_ASSIGN(zffloat, p2_distanceLimitMax, P2_MAX())
     ZFPROPERTY_ON_UPDATE_DECLARE(zffloat, p2_distanceLimitMax)
 
-    ZFPROPERTY_ON_UPDATE_DECLARE(ZFUIPoint, p2_anchor0)
-    ZFPROPERTY_ON_UPDATE_DECLARE(ZFUIPoint, p2_anchor1)
     ZFPROPERTY_ON_UPDATE_DECLARE(zffloat, p2_springHertz)
     ZFPROPERTY_ON_UPDATE_DECLARE(zffloat, p2_springDamping)
     ZFPROPERTY_ON_UPDATE_DECLARE(zffloat, p2_motorSpeed)
@@ -433,35 +462,30 @@ protected:
 };
 
 /** @brief see #P2World */
-ZFEXPORT_VAR_DECLARE(ZFLIB_ZFGameKit, zffloat, P2JointMotorFactorSoft)
-/** @brief see #P2World */
-ZFEXPORT_VAR_DECLARE(ZFLIB_ZFGameKit, zffloat, P2JointMotorFactorNormal)
-/** @brief see #P2World */
-ZFEXPORT_VAR_DECLARE(ZFLIB_ZFGameKit, zffloat, P2JointMotorFactorHard)
-
-/** @brief see #P2World */
 zfclass ZFLIB_ZFGameKit P2JointMotor : zfextend P2Joint {
     ZFOBJECT_DECLARE(P2JointMotor, P2Joint)
 public:
-    /** @brief see #P2World, usually (0, 1), how hard the motor take effective */
-    ZFPROPERTY_ASSIGN(zffloat, p2_motorFactor, P2JointMotorFactorNormal())
-    ZFPROPERTY_ON_UPDATE_DECLARE(zffloat, p2_motorFactor)
     /** @brief see #P2World */
-    ZFPROPERTY_ASSIGN(zffloat, p2_motorForce, 100)
+    ZFPROPERTY_ASSIGN(zffloat, p2_motorForce, P2JointForceDefault())
     ZFPROPERTY_ON_UPDATE_DECLARE(zffloat, p2_motorForce)
     /** @brief see #P2World */
-    ZFPROPERTY_ASSIGN(zffloat, p2_motorTorque, 100)
+    ZFPROPERTY_ASSIGN(zffloat, p2_motorTorque, P2JointTorqueDefault())
     ZFPROPERTY_ON_UPDATE_DECLARE(zffloat, p2_motorTorque)
+
     /** @brief see #P2World */
-    ZFPROPERTY_ASSIGN(ZFUIPoint, p2_distance)
-    ZFPROPERTY_ON_UPDATE_DECLARE(ZFUIPoint, p2_distance)
+    ZFPROPERTY_ASSIGN(zffloat, p2_distanceHertz, P2JointHertzDefault())
+    ZFPROPERTY_ON_UPDATE_DECLARE(zffloat, p2_distanceHertz)
     /** @brief see #P2World */
-    ZFMETHOD_DECLARE_0(ZFUIPoint, p2_distanceCur)
+    ZFPROPERTY_ASSIGN(zffloat, p2_distanceDamping, P2JointDampingDefault())
+    ZFPROPERTY_ON_UPDATE_DECLARE(zffloat, p2_distanceDamping)
+
     /** @brief see #P2World */
-    ZFPROPERTY_ASSIGN(zffloat, p2_angular)
-    ZFPROPERTY_ON_UPDATE_DECLARE(zffloat, p2_angular)
+    ZFPROPERTY_ASSIGN(zffloat, p2_angularHertz, P2JointHertzDefault())
+    ZFPROPERTY_ON_UPDATE_DECLARE(zffloat, p2_angularHertz)
     /** @brief see #P2World */
-    ZFMETHOD_DECLARE_0(zffloat, p2_angularCur)
+    ZFPROPERTY_ASSIGN(zffloat, p2_angularDamping, P2JointDampingDefault())
+    ZFPROPERTY_ON_UPDATE_DECLARE(zffloat, p2_angularDamping)
+
 protected:
     zfoverride
     virtual void p2impl_jointCreate(ZF_IN P2Body *ownerBody0, ZF_IN P2Body *ownerBody1);
@@ -472,27 +496,19 @@ zfclass ZFLIB_ZFGameKit P2JointWeld : zfextend P2Joint {
     ZFOBJECT_DECLARE(P2JointWeld, P2Joint)
 public:
     /** @brief see #P2World */
-    ZFPROPERTY_ASSIGN(ZFUIPoint, p2_anchor0)
-    ZFPROPERTY_ON_UPDATE_DECLARE(ZFUIPoint, p2_anchor0)
-    /** @brief see #P2World */
-    ZFPROPERTY_ASSIGN(ZFUIPoint, p2_anchor1)
-    ZFPROPERTY_ON_UPDATE_DECLARE(ZFUIPoint, p2_anchor1)
-    /** @brief see #P2World */
-    ZFPROPERTY_ASSIGN(zffloat, p2_angularRef)
-    ZFPROPERTY_ON_UPDATE_DECLARE(zffloat, p2_angularRef)
-
-    /** @brief see #P2World */
     ZFPROPERTY_ASSIGN(zffloat, p2_distanceHertz)
     ZFPROPERTY_ON_UPDATE_DECLARE(zffloat, p2_distanceHertz)
     /** @brief see #P2World */
     ZFPROPERTY_ASSIGN(zffloat, p2_distanceDamping)
     ZFPROPERTY_ON_UPDATE_DECLARE(zffloat, p2_distanceDamping)
+
     /** @brief see #P2World */
     ZFPROPERTY_ASSIGN(zffloat, p2_angularHertz)
     ZFPROPERTY_ON_UPDATE_DECLARE(zffloat, p2_angularHertz)
     /** @brief see #P2World */
     ZFPROPERTY_ASSIGN(zffloat, p2_angularDamping)
     ZFPROPERTY_ON_UPDATE_DECLARE(zffloat, p2_angularDamping)
+
 protected:
     zfoverride
     virtual void p2impl_jointCreate(ZF_IN P2Body *ownerBody0, ZF_IN P2Body *ownerBody1);
@@ -501,30 +517,6 @@ protected:
 /** @brief see #P2World */
 zfclass ZFLIB_ZFGameKit P2JointFilter : zfextend P2Joint {
     ZFOBJECT_DECLARE(P2JointFilter, P2Joint)
-protected:
-    zfoverride
-    virtual void p2impl_jointCreate(ZF_IN P2Body *ownerBody0, ZF_IN P2Body *ownerBody1);
-};
-
-/**
- * @brief see #P2World
- *
- * note:
- * -  the body needs to be drag by mouse should be set to #P2Joint::p2_bodyId1
- * -  #P2Joint::p2_bodyId0 usually should be set to ground or a dummy static body
- */
-zfclass ZFLIB_ZFGameKit P2JointMouse : zfextend P2Joint {
-    ZFOBJECT_DECLARE(P2JointMouse, P2Joint)
-
-public:
-    /** @brief see #P2World, mouse position relative to world */
-    ZFPROPERTY_ASSIGN(ZFUIPoint, p2_position)
-    ZFPROPERTY_ON_UPDATE_DECLARE(ZFUIPoint, p2_position)
-
-    /** @brief see #P2World */
-    ZFPROPERTY_ASSIGN(zffloat, p2_motorForce, 1000)
-    ZFPROPERTY_ON_UPDATE_DECLARE(zffloat, p2_motorForce)
-
 protected:
     zfoverride
     virtual void p2impl_jointCreate(ZF_IN P2Body *ownerBody0, ZF_IN P2Body *ownerBody1);
@@ -560,6 +552,8 @@ public:
     ZFEVENT(P2ExtUpdate)
 
 public:
+    /** @brief see #P2Body::p2_ext */
+    ZFMETHOD_DECLARE_0(P2World *, p2_ownerWorld)
     /** @brief see #P2Body::p2_ext */
     ZFMETHOD_DECLARE_0(P2Body *, p2_ownerBody)
 
@@ -758,8 +752,8 @@ public:
     ZFPROPERTY_ASSIGN(zfbool, p2_bullet)
     ZFPROPERTY_ON_UPDATE_DECLARE(zfbool, p2_bullet)
     /** @brief see #P2World, whether keep this body's rotation */
-    ZFPROPERTY_ASSIGN(zfbool, p2_rotationFixed)
-    ZFPROPERTY_ON_UPDATE_DECLARE(zfbool, p2_rotationFixed)
+    ZFPROPERTY_ASSIGN(zfbool, p2_rotationLock)
+    ZFPROPERTY_ON_UPDATE_DECLARE(zfbool, p2_rotationLock)
     /** @brief see #P2World */
     ZFPROPERTY_ASSIGN(zffloat, p2_gravityScale, 1.0f)
     ZFPROPERTY_ON_UPDATE_DECLARE(zffloat, p2_gravityScale)
@@ -1127,6 +1121,11 @@ public:
     /** @brief see #P2World, whether impl has attached to world */
     ZFMETHOD_DECLARE_0(zfbool, p2_implAttached)
 
+    /** @brief see #P2Joint::p2_privateMark */
+    ZFMETHOD_DECLARE_0(void, p2_privateMark)
+    /** @brief see #P2Joint::p2_privateMark */
+    ZFMETHOD_DECLARE_0(zfbool, p2_private)
+
 protected:
     zfoverride
     virtual void objectOnInit(void);
@@ -1371,12 +1370,19 @@ public:
     ZFPROPERTY_ON_UPDATE_DECLARE(ZFUIPoint, p2_gravity)
 
 public:
-    /** @brief see #P2World, positive value means item moves to right top, in P2's size unit */
+    /**
+     * @brief see #P2World, in P2's size unit
+     *
+     * positive value means items in physics world move to right top of UI world
+     */
     ZFPROPERTY_ASSIGN(ZFUIPoint, p2_UIOffset)
     ZFPROPERTY_ON_UPDATE_DECLARE(ZFUIPoint, p2_UIOffset)
-    /** @brief see #P2World, in P2's size unit */
-    ZFPROPERTY_ASSIGN(ZFUISize, p2_UISize)
-    ZFPROPERTY_ON_UPDATE_DECLARE(ZFUISize, p2_UISize)
+    /** @brief see #P2World, in P2's size unit, should be changed by impl only */
+    ZFMETHOD_DECLARE_1(void, p2_UISize
+            , ZFMP_IN(const ZFUISize &, v)
+            )
+    /** @brief see #p2_UISize */
+    ZFMETHOD_DECLARE_0(const ZFUISize &, p2_UISize)
     /** @brief see #P2World, `p2_UIScale = UI_size_unit / P2_size_unit` */
     ZFPROPERTY_ASSIGN(zffloat, p2_UIScale, 50)
     ZFPROPERTY_ON_UPDATE_DECLARE(zffloat, p2_UIScale)
@@ -1519,8 +1525,8 @@ public:
     ZFMETHOD_DECLARE_4(zfauto, p2_overlapTest
             , ZFMP_IN(const ZFUIRect &, rect)
             , ZFMP_IN(const ZFListener &, callback)
-            , ZFMP_IN_OPT(zfflags, filterMask, P2FilterMaskAll())
-            , ZFMP_IN_OPT(zfflags, filterCategory, P2FilterMaskAll())
+            , ZFMP_IN_OPT(zfflags, filterMask, P2CategoryMaskAll())
+            , ZFMP_IN_OPT(zfflags, filterCategory, P2CategoryMaskAll())
             )
     /**
      * @brief see #P2World
@@ -1536,8 +1542,8 @@ public:
             , ZFMP_IN(const ZFUIPoint &, src)
             , ZFMP_IN(const ZFUIPoint &, direction)
             , ZFMP_IN(const ZFListener &, callback)
-            , ZFMP_IN_OPT(zfflags, filterMask, P2FilterMaskAll())
-            , ZFMP_IN_OPT(zfflags, filterCategory, P2FilterMaskAll())
+            , ZFMP_IN_OPT(zfflags, filterMask, P2CategoryMaskAll())
+            , ZFMP_IN_OPT(zfflags, filterCategory, P2CategoryMaskAll())
             )
 
 public:

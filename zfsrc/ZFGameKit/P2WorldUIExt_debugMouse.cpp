@@ -6,7 +6,7 @@ zfclass _ZFP_I_P2DebugMouseCtrl : zfextend ZFUIView {
     ZFOBJECT_DECLARE(_ZFP_I_P2DebugMouseCtrl, ZFUIView)
 private:
     zfautoT<P2Body> _target;
-    zfautoT<P2JointMouse> _moveCtrl;
+    zfautoT<P2JointMotor> _moveCtrl;
     zfautoT<P2Body> _moveHelper;
     ZFUIPoint _moveValueBak;
     zffloat _rotateValueBak;
@@ -260,20 +260,19 @@ private:
         _moveValueBak = _target->p2_positionCur();
 
         _moveHelper = zfobj<ZFUIView>();
+        _moveHelper->p2_privateMark();
         world->p2_body(_moveHelper);
-        _moveHelper->p2_type(v_P2BodyType::e_Static);
+        _moveHelper->p2_type(v_P2BodyType::e_Kinematic);
         _moveHelper->p2_position(_moveValueBak);
-        _moveHelper->p2_bodyId(zftext("_ZFP_P2DebugMouseMoveHelper"));
 
-        if(!_target->p2_bodyId()) {
-            _target->p2_bodyId(zftext("_ZFP_P2DebugMouseMoveTarget"));
-        }
-
-        _moveCtrl = zfobj<P2JointMouse>();
+        _moveCtrl = zfobj<P2JointMotor>();
+        _moveCtrl->p2_privateMark();
         world->p2_joint(_moveCtrl);
-        _moveCtrl->p2_bodyId0(_moveHelper->p2_bodyId());
-        _moveCtrl->p2_bodyId1(_target->p2_bodyId());
-        _moveCtrl->p2_position(_moveValueBak);
+        _moveCtrl->p2_body0(_moveHelper);
+        _moveCtrl->p2_body1(_target);
+        _moveCtrl->p2_motorForce(P2JointForceHard());
+        _moveCtrl->p2_motorTorque(0);
+        _moveCtrl->p2_distanceDamping(1);
 
         _target->p2_sleeping(zffalse);
     }
@@ -286,9 +285,6 @@ private:
         _moveCtrl = zfnull;
         _moveHelper->p2_removeFromParent();
         _moveHelper = zfnull;
-        if(_target->p2_bodyId() == "_ZFP_P2DebugMouseMoveTarget") {
-            _target->p2_bodyId(zfnull);
-        }
         P2WorldView *worldView = zfcast(P2WorldView *, _target->p2_ownerWorld());
         if(worldView && worldView->debugMousePositionAlign() > 0) {
             ZFUIPoint t = _target->p2_positionCur();
@@ -327,7 +323,7 @@ private:
                 }
             }
         }
-        _moveCtrl->p2_position(t);
+        _moveHelper->p2_position(t);
         if(_target->p2_type() != v_P2BodyType::e_Dynamic) {
             _target->p2_position(t);
         }

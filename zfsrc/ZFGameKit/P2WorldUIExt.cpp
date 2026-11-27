@@ -301,7 +301,8 @@ void P2WorldView::objectOnDeallocPrepare(void) {
 void P2WorldView::layoutOnLayout(ZF_IN const ZFUIRect &bounds) {
     zfsuper::layoutOnLayout(bounds);
     const ZFUIRect &viewFrame = this->viewFrame();
-    d->world->p2_UISize(ZFUISizeCreate(viewFrame.width, viewFrame.height));
+    zffloat scale = zfcast(P2World *, this)->p2_UIScale();
+    d->world->p2_UISize(ZFUISizeCreate(viewFrame.width / scale, viewFrame.height / scale));
 }
 
 // ============================================================

@@ -7,9 +7,10 @@
 #define _ZFI_ZFGameKit_h_
 
 #include "ZFGameKit/P2GamePad.h"
+#include "ZFGameKit/P2MoverForDPad.h"
+#include "ZFGameKit/P2MoverForTouch.h"
 #include "ZFGameKit/P2ScreenTileView.h"
 #include "ZFGameKit/P2ShakeEffect.h"
-#include "ZFGameKit/P2STG.h"
 #include "ZFGameKit/P2TileView.h"
 #include "ZFGameKit/P2World.h"
 #include "ZFGameKit/P2WorldUIExt.h"
